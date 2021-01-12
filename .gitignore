@@ -1,0 +1,8 @@
+# ignore audio files
+Sound/audio/
+
+#ignore pdfs
+*.pdf
+
+#ignore __pycache__
+__pycache__/
