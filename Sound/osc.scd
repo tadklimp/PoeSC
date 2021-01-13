@@ -12,7 +12,17 @@ OSCdef.new(
 	{
 		|msg, time, recAddr, recPort|
 		// msg in the form of [OSC address, arg1, arg2, ...]
-		postln("Message from " ++ recAddr ++ ": " + msg[1..]);
+		var durs;
+		// postln("Message from " ++ recAddr ++ ": " + msg[1..]);
+		// msg[1..].class.postln;
+		/*msg.do{|x|
+			// durs.add(x[1]);
+			x.postln;
+		};*/
+		msg.postln;
+		durs = List.newUsing(msg);
+		durs.do{|x| x.postln};
+		durs.postln;
 	},
 	'/msg', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
