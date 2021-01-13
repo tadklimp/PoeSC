@@ -4,7 +4,6 @@ import prosodic
 import numpy as np
 import random
 import pycollider
-import config
 from numpy import dot
 from numpy.linalg import norm
 from collections import Counter
@@ -30,28 +29,25 @@ spacy_doc = nlp(text_raw)
 sentences = list(spacy_doc.sents)
 
 
+# receive spacy sentences_list and extract meter with prosodic
+def extract_meter(sentences_list):
+    for s in sentences_list:
+        prosodic_text = prosodic.Text(s.text)
+        # print(s.text.strip().replace("\n", " "))
+        return prosodic_labels(prosodic_text)
+
+
 # prosodic analysis func => 
 # analyse input and return a list of [syllable_length, syllable_stress, syllable_weight] 
-def extract_meter(text):
+def prosodic_labels(text):
   new_list = []
   for w in text.words():
     new_list.append([len(w.syllables()), w.getStress(),w.weight])
   return new_list
 
 
-# sentence from spacy to prosodic
-def sentence_to_prosodic(sentences_list):
-    for s in sentences_list:
-        prosodic_sent = prosodic.Text(s.text.strip())
-        # print(s.text.strip().replace("\n", " "))
-        print(extract_meter(prosodic_sent))
-
-
 # extract meter and send to Supercollider
-
-
-
-meter =  sentence_to_prosodic(sentences)
+meter = extract_meter(sentences)
 
 pycollider.connect()
 pycollider.sendMsg(meter)

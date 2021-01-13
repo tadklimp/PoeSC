@@ -20,6 +20,7 @@ OSCdef.new(
 )
 
 OSCdef.all; // All OSC listening functions stored as dictionary
+OSCdef.freeAll;
 
 (
 s.boot;
