@@ -10,7 +10,7 @@ from collections import Counter
 from split_sent import split_into_sentences
 import liblo, sys
 
-# setup OSC to sclang (57120)
+# setup OSC connection to sclang (57120)
 try:
     target = liblo.Address(57120)
 except liblo.AddressError as err:
@@ -25,7 +25,6 @@ These you presented to me you fish shaped island,
 As I wended the shores I know,
 As I walk'd with that electric self seeking types."""
 
-# prosodic_doc = prosodic.Text(text_raw)
 
 ###### load spaCy #########
 # nlp = spacy.load('en_core_web_md')
@@ -34,40 +33,43 @@ As I walk'd with that electric self seeking types."""
 # separate sentences in spacy
 # sentences = list(spacy_doc.sents)
 
-# sents_splits = split_into_sentences("what a terrible descise! gett ogg me!")
 
-# pycollider.connect()
+# create the OSC_messages (empty placeholders)
+osc_sylab_length = liblo.Message("/sylab/length")
+osc_sylab_stress = liblo.Message("/sylab/stress")
+osc_sylab_weight = liblo.Message("/sylab/weight")
 
-osc_msg = liblo.Message("/msg")
-
-# receive spacy sentences_list and extract meter with prosodic
+# receive text and extract meter with prosodic
 def extract_meter(text):
     sents_splits = split_into_sentences(text)
     for s in sents_splits:
         prosodic_text = prosodic.Text(s)
-        # print(s.text.strip().replace("\n", " "))
+        # print(s.strip().replace("\n", " "))
         prosodic_labels(prosodic_text)
-        #   pycollider.sendMsg(meter)
-        # print(meter)
-  # return meter
+        insert_break()
 
 
 # prosodic analysis func => 
-# analyse input and return a list of [syllable_length, syllable_stress, syllable_weight] 
+# detect [syllable_length, syllable_stress, syllable_weight] 
+# add them to the OSC_messages
 def prosodic_labels(text):
-    new_list = []
     for w in text.words():
-        osc_msg.add(len(w.syllables()))
-        # osc_msg.add(w.getStress())
-        # osc_msg.add(w.weight)
-        # new_list.extend([ w.getStress()])
-        # yield new_list
-    # return new_list
+        osc_sylab_length.add(len(w.syllables()))
+        osc_sylab_stress.add(w.getStress())
+        osc_sylab_weight.add(w.weight)
 
-# extract meter and send to Supercollider
-meter = extract_meter(text_raw)
+# a simple way to define a sentence-end
+# insert the "break" string at the end of each sentence (in the OSC_message)
+def insert_break():
+        osc_sylab_length.add("break")
+        osc_sylab_stress.add("break")
+        osc_sylab_weight.add("break")
+        
+# extract meter 
+extract_meter(text_raw)
 
-liblo.send(target, osc_msg) 
+#send to Supercollider-sclang
+liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight)) 
 # print(meter)
 
 

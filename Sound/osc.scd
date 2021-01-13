@@ -8,29 +8,49 @@ OSCFunc.trace(false);
 
 (
 OSCdef.new(
-	'msg', // Name in the global dictionary
+	'/sylab/length', // Name in the global dictionary
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+		("lenghts are: "++ msg[1..]).postln;
+		Pdefn(\sylab_length, Pseq(values[1..], 1));
+	},
+	'/sylab/length', // A path essentially detailing the name of the listening function
+	nil, // nil means to listen to all incoming IPs/ports
+).fix;
+
+OSCdef.new(
+	'/sylab/stress', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
 		// msg in the form of [OSC address, arg1, arg2, ...]
-		var durs;
-		// postln("Message from " ++ recAddr ++ ": " + msg[1..]);
-		// msg[1..].class.postln;
-		/*msg.do{|x|
-			// durs.add(x[1]);
-			x.postln;
-		};*/
-		msg.postln;
-		durs = List.newUsing(msg);
-		durs.do{|x| x.postln};
-		durs.postln;
+		// postln("Message from " ++ recAddr ++ ": " + msg);
+		("stresses are: "++ msg[1..]).postln
 	},
-	'/msg', // A path essentially detailing the name of the listening function
+	'/sylab/stress', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
-);
+).fix;
+
+OSCdef.new(
+	'/sylab/weight', // Name in the global dictionary
+	{
+		|msg, time, recAddr, recPort|
+		// msg in the form of [OSC address, arg1, arg2, ...]
+		// postln("Message from " ++ recAddr ++ ": " + msg);
+		("weights are: "++ msg[1..]).postln
+	},
+	'/sylab/weight', // A path essentially detailing the name of the listening function
+	nil, // nil means to listen to all incoming IPs/ports
+).fix;
+
 )
 
 OSCdef.all; // All OSC listening functions stored as dictionary
 OSCdef.freeAll;
+
+
+Pbind(\dur, Pdefn(\sylab_length), \degree, Prand([1,2,5,4,7,2],inf)).play
+
 
 (
 s.boot;
