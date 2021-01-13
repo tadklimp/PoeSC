@@ -1,14 +1,7 @@
 import os
-import spacy
 import prosodic
-import numpy as np
-import random
-import pycollider
-from numpy import dot
-from numpy.linalg import norm
-from collections import Counter
-from split_sent import split_into_sentences
 import liblo, sys
+from split_sent import split_into_sentences
 
 # setup OSC connection to sclang (57120)
 try:
@@ -16,22 +9,6 @@ try:
 except liblo.AddressError as err:
     print(err)
     sys.exit()
-
-os.chdir("/Users/Makis/Desktop/Musikfonds 2020_21-Research/PoeSC_alpha Python/NLTK")
-
-############ Raw Text ######################
-text_raw = """and then as I thought the old thought of likenesses,
-These you presented to me you fish shaped island,
-As I wended the shores I know,
-As I walk'd with that electric self seeking types."""
-
-
-###### load spaCy #########
-# nlp = spacy.load('en_core_web_md')
-# spacy_doc = nlp(text_raw)
-
-# separate sentences in spacy
-# sentences = list(spacy_doc.sents)
 
 
 # create the OSC_messages (empty placeholders)
@@ -61,15 +38,34 @@ def prosodic_labels(text):
 # a simple way to define a sentence-end
 # insert the "break" string at the end of each sentence (in the OSC_message)
 def insert_break():
-        osc_sylab_length.add("break")
-        osc_sylab_stress.add("break")
-        osc_sylab_weight.add("break")
-        
-# extract meter 
-extract_meter(text_raw)
-
-#send to Supercollider-sclang
-liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight)) 
-# print(meter)
+        osc_sylab_length.add("Rest(1)")
+        osc_sylab_stress.add("Rest(1)")
+        osc_sylab_weight.add("Rest(1)")
 
 
+
+# put it all together and send to Supercollider-sclang
+def meter_to_sclang(text):
+    extract_meter(text)
+    liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight)) 
+
+
+
+
+
+# a simple test
+if __name__ == "__main__":
+    os.chdir("/Users/Makis/Desktop/Musikfonds 2020_21-Research/PoeSC_alpha Python/NLTK")
+
+    ############ Raw Text ######################
+    # text_raw = """and then as I thought the old thought of likenesses,
+    # These you presented to me you fish shaped island,
+    # As I wended the shores I know,
+    # As I walk'd with that electric self seeking types."""
+    text_raw = """maybe you think too much, 
+    maybe you run
+    i hope you are reall
+    or?"""
+
+    # extract meter 
+    meter_to_sclang(text_raw)

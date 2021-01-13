@@ -8,12 +8,21 @@ OSCFunc.trace(false);
 
 (
 OSCdef.new(
-	'/sylab/length', // Name in the global dictionary
-	{
-		|msg, time, recAddr, recPort|
+	'/sylab/length', // It expects Integers and Rests
+	{ |msg, time, recAddr, recPort|
 		var values = msg;
-		("lenghts are: "++ msg[1..]).postln;
-		Pdefn(\sylab_length, Pseq(values[1..], 1));
+		var new_list = List.new;
+
+		values[1..].do{ |i|
+			if (i.isKindOf(Integer)){
+				new_list.add(i)
+			}{
+				new_list.add(Rest(1))
+			}
+		};
+		// ("lenghts are: "++ msg[1..]).postln;
+		new_list.postln;
+		Pdefn(\sylab_length, Pseq(new_list.asArray, 1));
 	},
 	'/sylab/length', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
@@ -49,7 +58,9 @@ OSCdef.all; // All OSC listening functions stored as dictionary
 OSCdef.freeAll;
 
 
-Pbind(\dur, Pdefn(\sylab_length), \degree, Prand([1,2,5,4,7,2],inf)).play
+Pbind(\dur, Pseq([2,1,1,1,Rest(1)],1), \degree, Prand([1,2,5,4,7,2],inf)).play
+
+Pbind(\dur, (Pdefn(\sylab_length)*0.5).trace, \degree, Prand([1,2,5,4,7,2],inf)).play
 
 
 (
