@@ -20,7 +20,7 @@ OSCdef.new(
 				new_list.add(Rest(1))
 			}
 		};
-		// ("lenghts are: "++ msg[1..]).postln;
+		("lenghts are: "++ msg[1..]).postln;
 		new_list.postln;
 		Pdefn(\sylab_length, Pseq(new_list.asArray, 1));
 	},
@@ -28,12 +28,32 @@ OSCdef.new(
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
+
+
+// TO DO: find a way to recognize compound symbols
 OSCdef.new(
 	'/sylab/stress', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
-		// msg in the form of [OSC address, arg1, arg2, ...]
-		// postln("Message from " ++ recAddr ++ ": " + msg);
+		var values = msg;
+		var new_list = List.new;
+
+		values[1..].do{ |i|
+			if (i.isKindOf(Symbol)){
+				i.do{
+					i.postln;
+					case
+					{i == 'P'}{ new_list.add(1)}
+					{i == 'U'}{ new_list.add(0.5)}
+					{i == 'Rest(1)'} { new_list.add(Rest(1))}
+			}}{
+
+			}
+		};
+		// ("lenghts are: "++ msg[1..]).postln;
+		new_list.postln;
+		Pdefn(\sylab_stress, Pseq(new_list.asArray, inf));
+
 		("stresses are: "++ msg[1..]).postln
 	},
 	'/sylab/stress', // A path essentially detailing the name of the listening function
@@ -59,9 +79,13 @@ OSCdef.freeAll;
 
 
 Pbind(\dur, Pseq([2,1,1,1,Rest(1)],1), \degree, Prand([1,2,5,4,7,2],inf)).play
-
-Pbind(\dur, (Pdefn(\sylab_length)*0.5).trace, \degree, Prand([1,2,5,4,7,2],inf)).play
-
+(
+Pbind(
+	\dur, (Pdefn(\sylab_length)*0.5).trace,
+	\degree, Prand([1,2,5,4,7,2],inf),
+	\amp, Pdefn(\sylab_stress)*0.7
+).play
+);
 
 (
 s.boot;
