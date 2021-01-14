@@ -46,7 +46,7 @@ OSCdef.new(
 					{x == $U}{ new_list.add(0.5)}
 				}
 				}{
-					new_list.add(Rest(0))
+					new_list.add(Rest(1))
 				}
 			}
 		};
@@ -59,12 +59,31 @@ OSCdef.new(
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
+
 OSCdef.new(
 	'/sylab/weight', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
-		// msg in the form of [OSC address, arg1, arg2, ...]
-		// postln("Message from " ++ recAddr ++ ": " + msg);
+		var values = msg;
+		var new_list = List.new;
+		values[1..].do{ |i|
+			if (i.isKindOf(Symbol)){
+				if(i != 'Rest(0)') { i.asString.do{ |x|
+					// x.class.postln;
+					case
+					{x == $H}{ new_list.add(1)}
+					{x == $L}{ new_list.add(0.5)}
+				}
+				}{
+					new_list.add(Rest(1))
+				}
+			}
+		};
+
+		Pdefn(\sylab_weight, Pseq(new_list.asArray, inf));
+		("stresses are: "++ msg[1..]).postln;
+		new_list.postln;
+
 		("weights are: "++ msg[1..]).postln
 	},
 	'/sylab/weight', // A path essentially detailing the name of the listening function
@@ -79,12 +98,13 @@ OSCdef.freeAll;
 
 
 // A test Pbind
+// TODO: Find a way to have multiple speeds inside of Pbind :(
 (
 Pbind(
 	\dur, (Pdefn(\sylab_length)).trace,
 	\degree, Prand([1,2,5,4,7,2],inf),
 	\amp, Pdefn(\sylab_stress)*0.2,
-	\stretch, 0.5
+	\stretch, Pdefn(\sylab_weight)
 ).play
 );
 
