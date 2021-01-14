@@ -12,7 +12,6 @@ OSCdef.new(
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
 		var new_list = List.new;
-
 		values[1..].do{ |i|
 			if (i.isKindOf(Integer)){
 				new_list.add(i)
@@ -21,7 +20,7 @@ OSCdef.new(
 			}
 		};
 		("lenghts are: "++ msg[1..]).postln;
-		new_list.postln;
+		// new_list.postln;
 		Pdefn(\sylab_length, Pseq(new_list.asArray, 1));
 	},
 	'/sylab/length', // A path essentially detailing the name of the listening function
@@ -29,32 +28,32 @@ OSCdef.new(
 ).fix;
 
 
+// 'PUU'.asString.do{|i| {case {i==$P}{"ya".postln}{i==$U}{"yuuu".postln}; }.fork}
 
-// TO DO: find a way to recognize compound symbols
+//
 OSCdef.new(
 	'/sylab/stress', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
 		var new_list = List.new;
-
 		values[1..].do{ |i|
 			if (i.isKindOf(Symbol)){
-				i.do{
-					i.postln;
+				if(i != 'Rest(1)') { i.asString.do{ |x|
+					// x.class.postln;
 					case
-					{i == 'P'}{ new_list.add(1)}
-					{i == 'U'}{ new_list.add(0.5)}
-					{i == 'Rest(1)'} { new_list.add(Rest(1))}
-			}}{
-
+					{x == $P}{ new_list.add(1)}
+					{x == $U}{ new_list.add(0.5)}
+				}
+				}{
+					new_list.add(Rest(0))
+				}
 			}
 		};
-		// ("lenghts are: "++ msg[1..]).postln;
-		new_list.postln;
-		Pdefn(\sylab_stress, Pseq(new_list.asArray, inf));
 
-		("stresses are: "++ msg[1..]).postln
+		Pdefn(\sylab_stress, Pseq(new_list.asArray, inf));
+		("stresses are: "++ msg[1..]).postln;
+		new_list.postln;
 	},
 	'/sylab/stress', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
@@ -71,21 +70,74 @@ OSCdef.new(
 	'/sylab/weight', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
-
 )
+
+
 
 OSCdef.all; // All OSC listening functions stored as dictionary
 OSCdef.freeAll;
 
 
-Pbind(\dur, Pseq([2,1,1,1,Rest(1)],1), \degree, Prand([1,2,5,4,7,2],inf)).play
+// A test Pbind
 (
 Pbind(
-	\dur, (Pdefn(\sylab_length)*0.5).trace,
+	\dur, (Pdefn(\sylab_length)).trace,
 	\degree, Prand([1,2,5,4,7,2],inf),
-	\amp, Pdefn(\sylab_stress)*0.7
+	\amp, Pdefn(\sylab_stress)*0.2,
+	\stretch, 0.5
 ).play
 );
+
+
+
+
+///////////// troubleshooting multiple speeds in one Pbind
+
+(
+Pbind(
+	\dur, 1,
+	\amp, Pseg(Pseq([0.1,1],inf), 0.5 ,\lin,inf),
+).play
+);
+
+
+Rational(4,7).asFloat
+a = [2,1,1,2,1,2,2,1]
+b = (a.size-1).collect({|i| a[i] %/ a[i+1]; })
+b.asFloat.postln
+
+
+
+~filterFreqBus = Bus.control(s, 1);
+
+(
+Pbind(
+	\type, \bus,
+	\out, ~filterFreqBus,
+	\array, Pseg(Pseq([0.1,0.5],inf), 0.5 ,\sin,inf),
+	\dur, 0.001
+).play;
+)
+
+~filterFreqBus.plot(1); // seems to work
+
+(
+Pbind(
+	\dur, 2,
+	\legato, 1,
+	\amp, ~filterFreqBus.asMap
+).play;
+)
+
+
+
+
+
+
+
+
+
+
 
 (
 s.boot;

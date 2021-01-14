@@ -38,9 +38,9 @@ def prosodic_labels(text):
 # a simple way to define a sentence-end
 # insert the "break" string at the end of each sentence (in the OSC_message)
 def insert_break():
-        osc_sylab_length.add("Rest(1)")
-        osc_sylab_stress.add("Rest(1)")
-        osc_sylab_weight.add("Rest(1)")
+        osc_sylab_length.add("Rest(0)")
+        osc_sylab_stress.add("Rest(0)")
+        osc_sylab_weight.add("Rest(0)")
 
 
 
