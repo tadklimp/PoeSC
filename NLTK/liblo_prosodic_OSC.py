@@ -36,7 +36,7 @@ def prosodic_labels(text):
         osc_sylab_weight.add(w.weight)
 
 # a simple way to define a sentence-end
-# insert the "break" string at the end of each sentence (in the OSC_message)
+# insert the "Rest(0)" string at the end of each sentence (in the OSC_message)
 def insert_break():
         osc_sylab_length.add("Rest(0)")
         osc_sylab_stress.add("Rest(0)")
@@ -58,14 +58,16 @@ if __name__ == "__main__":
     os.chdir("/Users/Makis/Desktop/Musikfonds 2020_21-Research/PoeSC_alpha Python/NLTK")
 
     ############ Raw Text ######################
-    # text_raw = """and then as I thought the old thought of likenesses,
-    # These you presented to me you fish shaped island,
+    text_raw = """and then as I thought the old thought of likenesses,
+    These you presented to me you fish shaped island,
+    """
     # As I wended the shores I know,
     # As I walk'd with that electric self seeking types."""
-    text_raw = """maybe you think too much, 
-    maybe you run
-    i hope you are reall
-    or?"""
+    # text_raw = """maybe you think too much, 
+    # maybe you run
+    # i hope you are reall
+    # or?"""
 
     # extract meter 
     meter_to_sclang(text_raw)
+    # print(prosodic.Sentence(text_raw))

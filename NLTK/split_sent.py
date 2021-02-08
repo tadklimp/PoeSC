@@ -11,7 +11,7 @@ websites = "[.](com|net|org|io|gov)"
 def split_into_sentences(text):
     text = " " + text + "  "
     # text = text.replace("\n"," ") # original
-    text = text.replace("\n","<stop>") # i added that
+    text = text.replace("\n","<stop>") # i added that: replace new line with stop
     text = re.sub(prefixes,"\\1<prd>",text)
     text = re.sub(websites,"<prd>\\1",text)
     if "Ph.D" in text: text = text.replace("Ph.D.","Ph<prd>D<prd>")

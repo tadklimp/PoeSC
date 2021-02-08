@@ -37,22 +37,26 @@ OSCdef.new(
 		|msg, time, recAddr, recPort|
 		var values = msg;
 		var new_list = List.new;
+
+		new_list.add(0); // init list
 		values[1..].do{ |i|
 			if (i.isKindOf(Symbol)){
-				if(i != 'Rest(1)') { i.asString.do{ |x|
+				if(i != 'Rest(0)') { i.asString.do{ |x|
 					// x.class.postln;
 					case
-					{x == $P}{ new_list.add(1)}
+					{x == $P}{ new_list.add(1.0)}
 					{x == $U}{ new_list.add(0.5)}
 				}
 				}{
-					new_list.add(Rest(1))
+					// new_list.add(Rest(0))
+					new_list.add(0)
 				}
 			}
 		};
 
-		Pdefn(\sylab_stress, Pseq(new_list.asArray, inf));
+		Pdefn(\sylab_stress, Pseq(new_list.asArray, 1));
 		("stresses are: "++ msg[1..]).postln;
+		// (Pdefn(\sylab_stress).source.storeArgs).postln;
 		new_list.postln;
 	},
 	'/sylab/stress', // A path essentially detailing the name of the listening function
@@ -66,25 +70,27 @@ OSCdef.new(
 		|msg, time, recAddr, recPort|
 		var values = msg;
 		var new_list = List.new;
+
+		new_list.add(0); // init list
 		values[1..].do{ |i|
 			if (i.isKindOf(Symbol)){
 				if(i != 'Rest(0)') { i.asString.do{ |x|
 					// x.class.postln;
 					case
-					{x == $H}{ new_list.add(1)}
-					{x == $L}{ new_list.add(0.5)}
+					{x == $H}{ new_list.add(2.0)}
+					{x == $L}{ new_list.add(1.0)}
 				}
 				}{
-					new_list.add(Rest(1))
+					new_list.add(0)
 				}
 			}
 		};
 
 		Pdefn(\sylab_weight, Pseq(new_list.asArray, inf));
-		("stresses are: "++ msg[1..]).postln;
+		("weights are: "++ msg[1..]).postln;
 		new_list.postln;
 
-		("weights are: "++ msg[1..]).postln
+		// ("weights are: "++ msg[1..]).postln
 	},
 	'/sylab/weight', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
@@ -96,15 +102,27 @@ OSCdef.new(
 OSCdef.all; // All OSC listening functions stored as dictionary
 OSCdef.freeAll;
 
+// calculate sum of array
+(
+c = [ 2, 1, 1, 1, 1, Rest(0), 2, 1, 1, Rest(0), 1, 1, 1, 1, 2, Rest(0), 1, Rest(0) ].collect({
+	arg i;
+	var list = List.new;
+	if (i.isKindOf(Rest).not){
+		i
+	}{
+		1
+	};
+}).sum;
+)
 
 // A test Pbind
 // TODO: Find a way to have multiple speeds inside of Pbind :(
 (
 Pbind(
-	\dur, (Pdefn(\sylab_length)).trace,
+	\dur, (Pdefn(\sylab_length)).trace(prefix:'dur: '),
 	\degree, Prand([1,2,5,4,7,2],inf),
-	\amp, Pdefn(\sylab_stress)*0.2,
-	\stretch, Pdefn(\sylab_weight)
+	\amp, (Pdefn(\sylab_stress)).trace(prefix:'amp: ')
+	// \stretch, Pconst(21,Pdefn(\sylab_weight)).trace(prefix:'stretch: ')
 ).play
 );
 
@@ -116,7 +134,7 @@ Pbind(
 (
 Pbind(
 	\dur, 1,
-	\amp, Pseg(Pseq([0.1,1],inf), 0.5 ,\lin,inf),
+	\amp, Pfindur(1,Pseg(Pseq([0.1,1],inf), 0.25 ,\lin,inf)),
 ).play
 );
 
