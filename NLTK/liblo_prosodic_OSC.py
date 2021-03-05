@@ -60,9 +60,9 @@ if __name__ == "__main__":
     ############ Raw Text ######################
     text_raw = """and then as I thought the old thought of likenesses,
     These you presented to me you fish shaped island,
-    """
-    # As I wended the shores I know,
-    # As I walk'd with that electric self seeking types."""
+    As I wended the shores I know,
+    As I walk'd with that electric self seeking types."""
+
     # text_raw = """maybe you think too much, 
     # maybe you run
     # i hope you are reall
