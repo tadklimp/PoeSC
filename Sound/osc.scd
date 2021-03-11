@@ -7,11 +7,15 @@ thisProcess.openPorts; // See all open ports for sclang.  These are UDP ports
 OSCFunc.trace(false);
 
 (
+
+OSCdef.freeAll;
+
 OSCdef.new(
 	'/sylab/length', // It expects Integers and Rests
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
 		var new_list = List.new;
+		// values[2].postln;
 		values[1..].do{ |i|
 			if (i.isKindOf(Integer)){
 				new_list.add(i)
@@ -20,7 +24,7 @@ OSCdef.new(
 			}
 		};
 		("lenghts are: "++ msg[1..]).postln;
-		// new_list.postln;
+		new_list.postln;
 		Pdefn(\sylab_length, Pseq(new_list.asArray, 1));
 	},
 	'/sylab/length', // A path essentially detailing the name of the listening function
@@ -38,18 +42,19 @@ OSCdef.new(
 		var values = msg;
 		var new_list = List.new;
 
-		new_list.add(0); // init list
+		// new_list.add(0); // init list
 		values[1..].do{ |i|
 			if (i.isKindOf(Symbol)){
 				if(i != 'Rest(0)') { i.asString.do{ |x|
 					// x.class.postln;
 					case
-					{x == $P}{ new_list.add(1.0)}
-					{x == $U}{ new_list.add(0.5)}
+					{x == $P}{ new_list.add(1.0)} // Primary stress
+					{x == $S}{ new_list.add(0)} // Secondary stress
+					{x == $U}{ new_list.add(0)} // Unstressed
 				}
 				}{
 					// new_list.add(Rest(0))
-					new_list.add(0)
+					// new_list.add(0)
 				}
 			}
 		};
@@ -71,7 +76,7 @@ OSCdef.new(
 		var values = msg;
 		var new_list = List.new;
 
-		new_list.add(0); // init list
+		// new_list.add(0); // init list
 		values[1..].do{ |i|
 			if (i.isKindOf(Symbol)){
 				if(i != 'Rest(0)') { i.asString.do{ |x|
@@ -95,6 +100,42 @@ OSCdef.new(
 	'/sylab/weight', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
+
+
+
+
+OSCdef.new(
+	'/sylab/text', // Name in the global dictionary
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+		var new_list = List.new;
+
+		// new_list.add(0); // init list
+/*		values[1..].do{ |i|
+			if (i.isKindOf(Symbol)){
+				if(i != 'Rest(0)') { i.asString.do{ |x|
+					// x.class.postln;
+					case
+					{x == $H}{ new_list.add(2.0)}
+					{x == $L}{ new_list.add(1.0)}
+				}
+				}{
+					new_list.add(0)
+				}
+			}
+		};*/
+
+		// Pdefn(\sylab_weight, Pseq(new_list.asArray, inf));
+		("texts are: "++ msg[1..]).postln;
+		new_list.postln;
+
+		// ("weights are: "++ msg[1..]).postln
+	},
+	'/sylab/text', // A path essentially detailing the name of the listening function
+	nil, // nil means to listen to all incoming IPs/ports
+).fix;
+
 )
 
 
@@ -102,29 +143,34 @@ OSCdef.new(
 OSCdef.all; // All OSC listening functions stored as dictionary
 OSCdef.freeAll;
 
-// calculate sum of array
-(
-c = [ 2, 1, 1, 1, 1, Rest(0), 2, 1, 1, Rest(0), 1, 1, 1, 1, 2, Rest(0), 1, Rest(0) ].collect({
-	arg i;
-	var list = List.new;
-	if (i.isKindOf(Rest).not){
-		i
-	}{
-		1
-	};
-}).sum;
-)
+
 
 // A test Pbind
 // TODO: Find a way to have multiple speeds inside of Pbind :(
 (
 Pbind(
-	\dur, (Pdefn(\sylab_length)).trace(prefix:'dur: '),
-	\degree, Prand([1,2,5,4,7,2],inf),
-	\amp, (Pdefn(\sylab_stress)).trace(prefix:'amp: ')
+	\dur, 0.25,
+	\degree, Pdefn(\sylab_stress)*7,
+	\amp, 0.5
 	// \stretch, Pconst(21,Pdefn(\sylab_weight)).trace(prefix:'stretch: ')
 ).play
 );
+
+
+
+// \sylab_length defines the Macro-Talea of the phrase, i.e a general multiplier of speed
+// \syllab_stress is simply assigned here to pitch
+(
+
+Pbindef(\try,
+	\talea_trigger, Pn(Pdefn(\sylab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
+	// this fixes the problem of having a Pn before the Pgate
+	// it should be the same Pdefn as the \dur Pdefn
+	\speed, Pgate(Pdefn(\sylab_length),1,\step1).trace, // talea multiplier for \dur
+	\degree, Pn(Pdefn(\sylab_stress),inf),
+	\dur, 0.25*Pkey(\speed) ,
+).play;
+)
 
 
 

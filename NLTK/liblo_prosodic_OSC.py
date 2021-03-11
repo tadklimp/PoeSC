@@ -15,6 +15,9 @@ except liblo.AddressError as err:
 osc_sylab_length = liblo.Message("/sylab/length")
 osc_sylab_stress = liblo.Message("/sylab/stress")
 osc_sylab_weight = liblo.Message("/sylab/weight")
+osc_sylab_text = liblo.Message("/sylab/text")
+
+collect_sylls = []
 
 # receive text and extract meter with prosodic
 def extract_meter(text):
@@ -24,9 +27,10 @@ def extract_meter(text):
         # print(s.strip().replace("\n", " "))
         prosodic_labels(prosodic_text)
         insert_break()
+        print(collect_sylls)
 
 
-# prosodic analysis func => 
+# prosodic analysis func :
 # detect [syllable_length, syllable_stress, syllable_weight] 
 # add them to the OSC_messages
 def prosodic_labels(text):
@@ -34,8 +38,13 @@ def prosodic_labels(text):
         osc_sylab_length.add(len(w.syllables()))
         osc_sylab_stress.add(w.getStress())
         osc_sylab_weight.add(w.weight)
+        # print(w.token)
+        for s in w.syllables():
+            # print(s.__dict__.keys())
+            collect_sylls.append(s.token)
+            osc_sylab_text.add(s.token)
 
-# a simple way to define a sentence-end
+# a simple way to define a sentence-end:
 # insert the "Rest(0)" string at the end of each sentence (in the OSC_message)
 def insert_break():
         osc_sylab_length.add("Rest(0)")
@@ -47,7 +56,7 @@ def insert_break():
 # put it all together and send to Supercollider-sclang
 def meter_to_sclang(text):
     extract_meter(text)
-    liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight)) 
+    liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight, osc_sylab_text)) 
 
 
 
@@ -58,16 +67,21 @@ if __name__ == "__main__":
     os.chdir("/Users/Makis/Desktop/Musikfonds 2020_21-Research/PoeSC_alpha Python/NLTK")
 
     ############ Raw Text ######################
-    text_raw = """and then as I thought the old thought of likenesses,
-    These you presented to me you fish shaped island,
-    As I wended the shores I know,
-    As I walk'd with that electric self seeking types."""
+    # text_raw = """and then as I thought the old thought of likenesses,
+    # These you presented to me you fish-shaped island,
+    # As I wended the shores I know,
+    # As I walk'd with that electric self seeking types."""
 
+    # text_raw = """a beautiful big tree was holding many mangos from its turquoise leaves."""
+    # text_raw = """a short text proportional proportional attitude bazerkadu."""
+    # text_raw = """a bridge above phonetics attitude abbreviation addition. """
     # text_raw = """maybe you think too much, 
     # maybe you run
-    # i hope you are reall
+    # i hope you are real
     # or?"""
 
+    text_raw = """jibberish bulka danihou, ablonezon parelna sylala."""
+    
     # extract meter 
     meter_to_sclang(text_raw)
     # print(prosodic.Sentence(text_raw))
