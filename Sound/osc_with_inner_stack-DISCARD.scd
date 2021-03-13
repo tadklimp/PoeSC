@@ -3,19 +3,105 @@
 NetAddr.langPort; // Generally port 57120 but could be used by another application so check
 thisProcess.openPorts; // See all open ports for sclang.  These are UDP ports
 
+
+
 // Trace incoming messages
 OSCFunc.trace(false);
-~counter
+
+~stack = {
+	var event = (
+		counter: 0,
+		list: {|self, cur, next, name, val|
+			self[\counter] = self[\counter]+1;
+			self[\counter].postln;
+
+			if(self[\counter] %2 == 0){
+				"even".postln;
+				val[1..].do{ |i|
+					if (i.isKindOf(Integer)){
+						cur.add(i)
+					}{
+						cur.add(Rest(1))
+					}
+				};
+				("lenghts are: "++ val[1..]).postln;
+				cur.postln;
+				Pdefn(name.asSymbol, Pseq(cur.asArray, 1)).condition_({ |val,i|
+					var size=cur.size;
+					("size is"++ size).postln;
+					i.postln%size==0
+				});
+			}{
+				"odd".postln;
+				val[1..].do{ |i|
+					if (i.isKindOf(Integer)){
+						next.add(i)
+					}{
+						next.add(Rest(1))
+					}
+				};
+				("lenghts are: "++ val[1..]).postln;
+				next.postln;
+				Pdefn(name.asSymbol, Pseq(next.asArray, 1)).condition_({|val,i|
+					var size=next.size;
+					("size is"++ size).postln;
+					i.postln%size==0 });
+			}
+		}
+	);
+	event;
+}.value;
+
+
+(
+~counter = {
+	var event = (
+		counter: 0,
+		list: {|self, input_list|
+			self[\counter] = self[\counter]+1;
+
+			if(self[\counter] %2 == 0){
+				"even".postln;
+				List.new;
+			}{
+				List.new;
+			}
+		};
+	);
+	event;
+}.value;
+);
+
+~da=List.new;
+~da.add(10)
+~xaxa = ~counter.list
+~xaxa.add(2)
+~xaxa
+
 (
 
 OSCdef.freeAll;
-
 
 OSCdef.new(
 	'/sylab/length', // It expects Integers and Rests
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
-		~phrase.syll_length.value_(values[1..]).changed(\value)
+		var showq;
+		var current_list = List.new;
+		var next_list = List.new;
+
+
+		~stack.list(current_list, next_list, "sylab_length", values);
+
+		/*	showq = {|cur,next|
+		if (cur.isKindOf(List)){
+		// current_list = cur;
+		cur.add([1,2,3]);
+		};
+		// [cur, next].postln;
+		};
+		showq.value(current_list,List.new);
+		("checkkkk=====>>>>> "++current_list).postln;*/
 	},
 	'/sylab/length', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
@@ -139,7 +225,7 @@ OSCdef.freeAll;
 // TODO: Find a way to have multiple speeds inside of Pbind :(
 (
 Pbind(
-	\dur, 0.5,
+	\dur, 0.25,
 	\degree, Pdefn(\sylab_stress)*7,
 	\amp, 0.5
 	// \stretch, Pconst(21,Pdefn(\sylab_weight)).trace(prefix:'stretch: ')
@@ -159,8 +245,7 @@ Pbindef(\try,
 	\speed, Pgate(Pdefn(\sylab_length),1,\step1).trace, // talea multiplier for \dur
 	\degree, Pn(Pshuf([1,3,5,7]),inf),
 	\octave, Pn((Pdefn(\sylab_stress)*2)+3,inf), // syllab stress effects octave
-	\dur, 0.125*Pkey(\speed) ,
-	// \dur, 0.25 ,
+	\dur, 0.25*Pkey(\speed) ,
 ).play;
 )
 
@@ -241,76 +326,53 @@ Pbind(
 
 
 
+////////// old 'sylab/length'
+
+var stack = {|i|
+	var event = (
+		counter: 0,
+		list: {|self,num|
+			self[\counter] = self[\counter]+1;
+			self[\counter].postln;
+
+			if(self[\counter] %2 == 0){
+				"even".postln;
+				values[1..].do{ |i|
+					if (i.isKindOf(Integer)){
+						current_list.add(i)
+					}{
+						current_list.add(Rest(1))
+					}
+				};
+				("lenghts are: "++ msg[1..]).postln;
+				current_list.postln;
+				Pdefn(\sylab_length, Pseq(current_list.asArray, 1)).condition_({ |val,i|
+					var size=current_list.size;
+					("size is"++ size).postln;
+					i.postln%size==0
+				});
+			}{
+				"odd".postln;
+				values[1..].do{ |i|
+					if (i.isKindOf(Integer)){
+						next_list.add(i)
+					}{
+						next_list.add(Rest(1))
+					}
+				};
+				("lenghts are: "++ msg[1..]).postln;
+				next_list.postln;
+				Pdefn(\sylab_length, Pseq(next_list.asArray, 1)).condition_({|val,i|
+					var size=next_list.size;
+					("size is"++ size).postln;
+					i.postln%size==0 });
+			}
+		}
+	);
+	event;
+}.value;
 
 
 
-
-
-(
-s.boot;
-~out = 0;
-
-~printUgenMsg = {
-	|name, recAddr, freq, phase, amp, dur, pan|
-	var header, phaseStr, args;
-	header = name ++ " message from " ++ recAddr ++ ": ";
-	phaseStr = if(phase == nil, {""}, {", Phase " ++ phase});
-	args = "Freq " ++ freq ++ phaseStr ++ ", Amp " ++ amp ++ ", Dur " ++ dur ++ ", Pan " ++ pan;
-	postln(header ++ args)
-};
-
-SynthDef(\sine, {
-	arg out = ~out, freq, phase, amp, dur, pan;
-	var sig, env;
-	sig = SinOsc.ar(freq, phase, amp);
-	env = Env.linen(5, dur, 5);
-	sig = sig * EnvGen.kr(env, doneAction: 2);
-	sig = Pan2.ar(sig, pan);
-	Out.ar(out, sig);
-}).add;
-
-OSCdef.new(
-	'sine',
-	{
-		|msg, time, recAddr, recPort|
-		var freq, phase, amp, dur, pan;
-		freq = msg[1];
-		phase = msg[2];
-		amp = msg[3];
-		dur = msg[4];
-		pan = msg[5];
-		~printUgenMsg.value("Sine", recAddr, freq, phase, amp, dur, pan);
-		Synth(\sine, [\freq, freq, \phase, phase, \amp, amp, \dur, dur, \pan, pan]);
-	},
-	'/sounds/sine',
-	nil
-);
-
-SynthDef(\saw, {
-	arg out = ~out, freq, amp, dur, pan;
-	var sig, env;
-	sig = Saw.ar(freq, amp); // Saw doesn't have phase argument
-	env = Env.linen(5, dur, 5);
-	sig = sig * EnvGen.kr(env, doneAction: 2);
-	sig = Pan2.ar(sig, pan);
-	Out.ar(out, sig);
-}).add;
-
-OSCdef.new(
-	'saw',
-	{
-		|msg, time, recAddr, recPort|
-		var freq, amp, dur, pan;
-		freq = msg[1];
-		amp = msg[2];
-		dur = msg[3];
-		pan = msg[4];
-		~printUgenMsg.value("Saw", recAddr, freq, nil, amp, dur, pan);
-		Synth(\saw, [\freq, freq, \amp, amp, \dur, dur, \pan, pan]);
-	},
-	'/sounds/saw',
-	nil
-);
-)
 
 s.meter;

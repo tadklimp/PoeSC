@@ -17,6 +17,7 @@ osc_sylab_stress = liblo.Message("/sylab/stress")
 osc_sylab_weight = liblo.Message("/sylab/weight")
 osc_sylab_text = liblo.Message("/sylab/text")
 
+# collect all syllables in a list
 collect_sylls = []
 
 # receive text and extract meter with prosodic
@@ -38,9 +39,7 @@ def prosodic_labels(text):
         osc_sylab_length.add(len(w.syllables()))
         osc_sylab_stress.add(w.getStress())
         osc_sylab_weight.add(w.weight)
-        # print(w.token)
         for s in w.syllables():
-            # print(s.__dict__.keys())
             collect_sylls.append(s.token)
             osc_sylab_text.add(s.token)
 
@@ -81,6 +80,7 @@ if __name__ == "__main__":
     # or?"""
 
     text_raw = """jibberish bulka danihou, ablonezon parelna sylala."""
+    # text_raw = """ka manakalalaka."""
     
     # extract meter 
     meter_to_sclang(text_raw)

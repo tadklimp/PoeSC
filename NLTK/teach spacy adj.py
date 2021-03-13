@@ -7,31 +7,17 @@ import numpy as np
 
 # added Spacy Syllables
 nlp = spacy.load("en_core_web_md")
-syllables = SpacySyllables(nlp)
-nlp.add_pipe('syllables', after='tagger')
+# syllables = SpacySyllables(nlp)
+# nlp.add_pipe('syllables', after='tagger')
 
-# classes = ['concrete', 'abstract']
-# # todo: add more examples
-# train_set = [
-#     ['apple', 'owl', 'house'],
-#     ['agony', 'knowledge', 'process'],
-# ]
-# X = np.stack([list(nlp(w))[0].vector for part in train_set for w in part])
-# y = [label for label, part in enumerate(train_set) for _ in part]
-# classifier = LogisticRegression(C=0.1, class_weight='balanced').fit(X, y)
-
-
-# for token in nlp("Have a seat in that chair with comfort and drink some juice to soothe your thirst."):
-#     if token.pos_ == 'NOUN':
-#         print(token, classes[classifier.predict([token.vector])[0]])
+print("Pipeline:", nlp.pipe_names)
 
 
 # text_raw = nlp("""a short text proportional proportional attitude.""")
 text_raw = nlp("a beautiful big tree was holding many mangos from its turquoise leaves")
 # text_raw = nlp("some of them will hold a brown book, which i find pedantic in its miniscule content. She asked for a white t-shirt, that was bleached into colourful smelly arrogance. Then the thick sharp edge of the knife glimmed onto her face, bursts into unexpected pie of gooey substance, that stood there with a sudden thump")
 
-classes = ['colour', 'size', 'opinion', 'quantity', 'texture', 'age']
-# todo: add more examples
+adj_classes = ['colour', 'size', 'opinion', 'quantity', 'texture', 'age']
 adj_train_set = [
     ['red', 'blue', 'white', 'purple', 'green', 'yellow', 'black', 'turquoise', 'magenta', 'pink'],
     ['big', 'small', 'large', 'huge', 'tiny', 'extensive', 'miniscule', 'long', 'short'] ,
@@ -42,11 +28,11 @@ adj_train_set = [
 ]
 X = np.stack([list(nlp(w))[0].vector for part in adj_train_set for w in part])
 y = [label for label, part in enumerate(adj_train_set) for _ in part]
-classifier = LogisticRegression(C=0.1, class_weight='balanced').fit(X, y)
+classifier = LogisticRegression(C=0.1, class_weight='balanced', solver='lbfgs', multi_class='auto').fit(X, y)
 
 
 
 for token in text_raw:
-    # if token.pos_ == 'ADJ':
-        # print(token, classes[classifier.predict([token.vector])[0]])
-    print(token._.syllables)
+    if token.pos_ == 'ADJ':
+        print(token, adj_classes[classifier.predict([token.vector])[0]])
+    # print(token._.syllables)

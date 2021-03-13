@@ -6,3 +6,6 @@ Sound/audio/
 
 #ignore __pycache__
 __pycache__/
+
+#ignore .svg
+*.svg

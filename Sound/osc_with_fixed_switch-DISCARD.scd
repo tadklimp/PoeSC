@@ -9,13 +9,44 @@ OSCFunc.trace(false);
 (
 
 OSCdef.freeAll;
-
+~counter = 0 ;
 
 OSCdef.new(
 	'/sylab/length', // It expects Integers and Rests
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
-		~phrase.syll_length.value_(values[1..]).changed(\value)
+		var newList1 = List.new;
+		var newList2 = List.new;
+
+		if(~counter % 2 == 0){
+			"even".postln;
+			values[1..].do{ |i|
+				if (i.isKindOf(Integer)){
+					newList1.add(i)
+				}{
+					newList1.add(Rest(1))
+				}
+			};
+			("lenghts are: "++ msg[1..]).postln;
+			newList1.postln;
+			Pdefn(\sylab_length, Pseq(newList1.asArray, 1)).condition_({|val,i|
+				var size=newList1.size;("size is"++ size).postln; i.postln%size==0 });
+		}{
+			"odd".postln;
+			values[1..].do{ |i|
+				if (i.isKindOf(Integer)){
+					newList2.add(i)
+				}{
+					newList2.add(Rest(1))
+				}
+			};
+			("lenghts are: "++ msg[1..]).postln;
+			newList2.postln;
+			Pdefn(\sylab_length, Pseq(newList2.asArray, 1)).condition_({|val,i|
+				var size=newList2.size;("size is"++ size).postln; i.postln%size==0 });
+		};
+
+		~counter = ~counter+1;
 	},
 	'/sylab/length', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
