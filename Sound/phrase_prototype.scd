@@ -1,51 +1,63 @@
 
 ~phrase= (
 	id: 0,
+	parallel: Ref(true), // affects Pbindef players
 	syll_length: Ref([]),
-	syll_stress: Ref(List.new),
-	syll_weight: Ref(List.new),
-	pitch_material: Ref(List.new),
+	syll_stress: Ref([]),
+	syll_weight: Ref([]),
+	num_words: Ref("Int"),
+	adjs: Ref([]),
+	nouns: Ref([]),
+
+	instr: Ref([]),
+	pitch_material: Ref([]),
 	scale: Ref("Scale"),
-	num_words: Ref("float"),
-	adjs: Ref(List.new),
-	nouns: Ref(List.new),
-	serial_paral: Ref("Boolean"),
-	reccursion: Ref("Boolean")
+	steps_octave: Ref("Int"),
+	stack: Ref(true), // affects Pdefns
+	recursion: Ref(true) // affects Pbindef players
 );
+
+~phrase.stack.value_(true)
+~phrase.stack.value
 
 (
 ~length_ctrl.remove;
-~length_ctrl=SimpleController(~phrase.syll_length).put(
+~length_ctrl=SimpleController(~phrase.syll_length);
+~length_ctrl.put(
 	\value, {|values, tag, args|
-		var newList1 = List.new;
-		var newList2 = List.new;
-		values.value.postln;
-		if(~phrase.id % 2 == 0){
-			"even".postln;
-			values.value[1..].do{ |i|
+		// Here I work around the problem that ".condition_" imposes
+		// on the included Pdefns, i.e. every time place the incoming
+		// list into a new List, so that the new Pdefn can register correctly
+		// the List.size and use it as "wait" argument in its conditional execution.
+		var newList = List.new;
+		var local_env = ();
+		var pos = ("pos"++~phrase.id).asSymbol; // create a new name every time
+		if(~phrase.stack.value==true){ // check if phrases are played until end before new phrase begins
+			values.value.do{ |i|
 				if (i.isKindOf(Integer)){
-					newList1.add(i)
+					newList.add(i)
 				}{
-					newList1.add(Rest(1))
-				}
-			};
+					newList.add(Rest(1))
+			}};
+			local_env.put(pos, newList);
+			local_env.postln;
 			("lenghts are: "++ values.value).postln;
-			newList1.postln;
-			Pdefn(\sylab_length, Pseq(newList1.asArray, 1)).condition_({|val,i|
-				var size=newList1.size;("size is"++ size).postln; i.postln%size==0 });
+			Pdefn(\sylab_length, Pseq(local_env[pos].asArray, 1)).condition_({ |val,i|
+				var size = local_env[pos].size;
+				("New Pattern starts in ..."++ (size- i)).postln;
+				i.postln%size==0;
+			});
 		}{
-			"odd".postln;
-			values.value[1..].do{ |i|
+			values.value.do{ |i|
 				if (i.isKindOf(Integer)){
-					newList2.add(i)
+					newList.add(i)
 				}{
-					newList2.add(Rest(1))
-				}
-			};
+					newList.add(Rest(1))
+			}};
+			local_env.put(pos, newList);
+			local_env.postln;
 			("lenghts are: "++ values.value).postln;
-			newList2.postln;
-			Pdefn(\sylab_length, Pseq(newList2.asArray, 1)).condition_({|val,i|
-				var size=newList2.size;("size is"++ size).postln; i.postln%size==0 });
+			Pdefn(\sylab_length, Pseq(local_env[pos].asArray, 1))// no conditional trigger here!
 		};
 		~phrase.id = ~phrase.id+1;
 	}
