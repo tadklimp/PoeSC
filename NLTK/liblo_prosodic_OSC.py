@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # As I wended the shores I know,
     # As I walk'd with that electric self seeking types."""
 
-    # text_raw = """a beautiful big tree was holding many mangos from its turquoise leaves."""
+    text_raw = """a beautiful big tree was holding many mangos from its turquoise leaves."""
     # text_raw = """a short text proportional proportional attitude bazerkadu."""
     # text_raw = """a bridge above phonetics attitude abbreviation addition. """
     # text_raw = """maybe you think too much, 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # i hope you are real
     # or?"""
 
-    text_raw = """jibberish bulka danihou, ablonezon parelna sylala."""
+    # text_raw = """jibberish bulka danihou, ablonezon parelna sylala."""
     # text_raw = """ka manakalalaka."""
     
     # extract meter 

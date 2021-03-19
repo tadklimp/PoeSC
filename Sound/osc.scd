@@ -160,6 +160,7 @@ Pbindef(\try,
 	\degree, Pn(Pshuf([1,3,5,7]),inf),
 	\octave, Pn((Pdefn(\sylab_stress)*2)+3,inf), // syllab stress effects octave
 	\dur, 0.125*Pkey(\speed) ,
+	\amp, 0.5
 	// \dur, 0.25 ,
 ).play;
 )
