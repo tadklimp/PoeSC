@@ -15,7 +15,8 @@ OSCdef.new(
 	'/sylab/length', // It expects Integers and Rests
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
-		~phrase.syll_length.value_(values[1..]).changed(\value)
+		~phrase.syll_length.value_(values[1..]).changed(\value);
+		~phrase.id.value_(~phrase.id+1).changed(\init);
 	},
 	'/sylab/length', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
