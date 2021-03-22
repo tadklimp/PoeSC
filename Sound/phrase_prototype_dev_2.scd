@@ -39,7 +39,7 @@
 ~phrase.fx.value_(12)
 ~phrase.use{ ~server}
 
-~server
+
 
 (
 ~phrase_init.remove;
@@ -80,81 +80,6 @@
 
 
 
-Pcleanup(
-	{"can free".debug },
-	Pbind( \degree, Pseq([0], inf), \dur, Pseq([1],inf), \amp, 0.1)
-)
-
-
-(
-~fx_init.remove;
-~fx_init = SimpleController(~phrase.fx).put(
-	\init, { |values, tag, args|
-		var dom;
-		var id = ~phrase.id.value.asSymbol;
-		var group = ~phrase.group_main.value;
-		var server = ~phrase.server.value;
-		var wrapper = { |pat|
-			Prout { |inval|
-				var stream = pat.asStream;
-				var cleanup = EventStreamCleanup.new;
-				var outval;
-				// var event = inval.copy;
-				cleanup.addFunction(inval, { var time=3;
-					fork{ group.release(time);
-						(time+1).wait;
-						group.free;}
-				});
-
-				while {
-					outval = stream.next(inval);
-					outval.notNil;
-				} {
-					cleanup.update(outval);
-					inval = outval.yield;
-				};
-
-				cleanup.exit(inval);
-			}
-
-		};
-
-		Pdef(\echo_++id.asSymbol,
-			( type: \on, instrument: \echo,
-				server: server, group: group,
-				addAction: 1, out: ~phrase.fx_bus_index.value)).play;
-		/*
-		Pdef(\verb_++id,
-		\type, \on, \instrument, \verb,
-		\server, ~phrase.server.value, \group, ~phrase.group_main.value,
-		\addAction, 1, \out, ~phrase.fx_bus_index.value).play;
-		*/
-		Pdef(\fxMonitor_++id.asSymbol,
-			( type: \on, instrument: \monitor,
-				server: server, group: group,
-				addAction: 1, in: ~phrase.fx_bus_index.value, out:0)).play;
-
-		{"ti egine???".postln}.defer(0.5);
-		// ~phrase.instr.value_(
-
-		dom = wrapper.(
-			Pbind(
-				\server, server,
-				\group, group,
-				\addAction, 0,
-				// \group, Pfunc({Group.new}),
-				\dur, 0.313,
-				\degree, Pshuf([0,2,4,5]+7,inf),
-				\amp, 0.01,
-				\pan, Pwhite(-1,1),
-				\scale, Pfunc{topEnvironment[\phrase].scale},
-				\out, ~phrase.fx_bus_index.value
-		));
-
-		Pdef(\player++id.asSymbol,dom ).play(quant:1);
-		// )
-	}
-))
 
 
 (
@@ -166,30 +91,7 @@ Pcleanup(
 		var group = ~phrase.group_main.value;
 		var server = ~phrase.server.value;
 		var fx_bus = ~phrase.fx_bus_index.value;
-		/*		var wrapper = { |pat|
-		Prout { |inval|
-		var stream = pat.asStream;
-		var cleanup = EventStreamCleanup.new;
-		var outval;
-		// var event = inval.copy;
-		cleanup.addFunction(inval, { var time=3;
-		fork{ group.release(time);
-		(time+1).wait;
-		group.free;}
-		});
 
-		while {
-		outval = stream.next(inval);
-		outval.notNil;
-		} {
-		cleanup.update(outval);
-		inval = outval.yield;
-		};
-
-		cleanup.exit(inval);
-		}
-
-		};*/
 
 		Pdef(\echo_++id.asSymbol,
 			( type: \on, instrument: \echo,
@@ -206,8 +108,7 @@ Pcleanup(
 				server: server, group: group,
 				addAction: 1, in: fx_bus, out:0)).play;
 
-		{"ti egine???".postln}.defer(0.5);
-		// ~phrase.instr.value_(
+
 		PbdefClean(
 			{ var time=3;
 				fork{
@@ -225,9 +126,9 @@ Pcleanup(
 			\group, group,
 			\addAction, 0,
 			// \group, Pfunc({Group.new}),
-			\dur,4,
-			\degree, Pshuf([0,2,4,5]-7,inf),
-			\amp, 0.005,
+			\dur, 0.5,
+			\degree, Pshuf([0,2,4,5]+2,inf),
+			\amp, 0.01,
 			\pan, Pwhite(-1,1),
 			\scale, Pfunc{topEnvironment[\phrase].scale},
 			\out, ~phrase.fx_bus_index.value
@@ -238,26 +139,42 @@ Pcleanup(
 			group.free}
 			}*/
 		).play(quant:1);
-
-		// Pdef(\player++id.asSymbol,dom ).play(quant:1);
-		// )
 	}
 ))
 
 
-~phrase.id.value
-
-\fxMonitor24.asString.findRegexp("24")
-\fxMonitor24.asString.contains("24")
-
-~phrase.id
-~phrase.group_main.value.deepFree
-~phrase.instr.value.asCompileString
 
 ~phrase.id.value_(~phrase.id.value+1).changed(\init);
 
+Pdef.modulateAll(\mtranspose, -2, \scale, Scale.lydian.tuning_(Tuning.choose(12)))
+Pdef.modulateAll(\detune, PXLine(1,200,80))
+Pdef.modulateAll(\detune, PLFTri(4,0,200,0))
+Pdef.modulateAll(\detune, 0)
+Pdef.modulateAll(\amp, 0.001)
 
-Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \mtranspose, -3) }}
+(50-60).midiratio
+(
+SynthDef(\help_PlayBuf, {| out = 0, bufnum = 0, freq=1, pos=0 , gate=1, amp=0.1 |
+	var env = Linen.kr(gate, 0.0005, amp, 0.7, 2);
+    OffsetOut.ar(out,
+        PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum)*(freq.cpsmidi-60).midiratio, startPos:pos, loop: 1.0)!2 * env
+    )
+}).add;
+)
+b.free
+b = Buffer.readChannel(s,"/Users/Makis/Documents/Tidal/Dirt/samples/brane2/13.wav",channels:0);
+b.numFrames
+(Pbindef(\bufy,
+	\instrument, \help_PlayBuf,
+	\bufnum, b.bufnum,
+	\degree, Pseq([0,1,2],inf),
+	\pos, Pwhite(0.0,b.numFrames*0.25,inf),
+	\dur, 0.2,
+	\amp,0.3
+).play)
+Pbindef(\bufy).stop
+
+Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \mtranspose, 0) }}
 Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \scale, Scale.phrygian) }}
 Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \scale, Scale.lydian) }}
 Pdef.all.do{|x| x.stop};
@@ -280,6 +197,8 @@ collect
 Pfset ??????????
 Pspawner
 
+Pbindef(\t1, \server, s, \degree, Pshuf((1..7),inf), \dur, 0.5, \amp, 0.01).play(quant:1);
+Pdef.modulateAll(\mtranspose, Pstep(Pseq([2,4,-2,1,0],inf),8*2), \scale, Scale.major )
 
 u=( type: \on, instrument: \monitor,
 	server: ~phrase.server.value, group: ~phrase.group_main.value,
