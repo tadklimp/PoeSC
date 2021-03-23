@@ -93,17 +93,17 @@
 		var fx_bus = ~phrase.fx_bus_index.value;
 
 
-		Pdef(\echo_++id.asSymbol,
+		Pdef((\echo_++id).asSymbol,
 			( type: \on, instrument: \echo,
 				server: server, group: group,
 				addAction: 1, out: fx_bus)).play;
 
-		Pdef(\verb_++id.asSymbol,
+		Pdef((\verb_++id).asSymbol,
 			( type: \on, instrument: \verb,
 				server: server, group: group,
 				addAction: 1, out: fx_bus)).play;
 
-		Pdef(\fxMonitor_++id.asSymbol,
+		Pdef((\fxMonitor_++id).asSymbol,
 			( type: \on, instrument: \monitor,
 				server: server, group: group,
 				addAction: 1, in: fx_bus, out:0)).play;
@@ -120,14 +120,14 @@
 					"cleared".postln;
 				}
 			},
-			\player++id.asSymbol,
+			(\player++id).asSymbol,
 
 			\server, server,
 			\group, group,
 			\addAction, 0,
 			// \group, Pfunc({Group.new}),
-			\dur, 0.5,
-			\degree, Pshuf([0,2,4,5]+2,inf),
+			\dur, 2,
+			\degree, Pshuf([0,2,4,5]+5,inf),
 			\amp, 0.01,
 			\pan, Pwhite(-1,1),
 			\scale, Pfunc{topEnvironment[\phrase].scale},
@@ -139,14 +139,16 @@
 			group.free}
 			}*/
 		).play(quant:1);
+
 	}
 ))
 
+PbdefClean.all
 
 
 ~phrase.id.value_(~phrase.id.value+1).changed(\init);
 
-Pdef.modulateAll(\mtranspose, -2, \scale, Scale.lydian.tuning_(Tuning.choose(12)))
+Pdef.modulateAll(\mtranspose, 0, \scale, Scale.phrygian.tuning_(Tuning.werckmeister))
 Pdef.modulateAll(\detune, PXLine(1,200,80))
 Pdef.modulateAll(\detune, PLFTri(4,0,200,0))
 Pdef.modulateAll(\detune, 0)
@@ -177,17 +179,30 @@ Pbindef(\bufy).stop
 Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \mtranspose, 0) }}
 Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \scale, Scale.phrygian) }}
 Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \scale, Scale.lydian) }}
+Pdef.all.keysValuesDo{|key,val| [key.class, val.class].postln ++ \n  }
 Pdef.all.do{|x| x.stop};
+Pdef.all.do{|x| x.pause};
+Pdef.all.do{\mtranspose, 2};
+
+Pdef(\player3)
+.player.isPlaying
 
 Pdef.all.values[0].pattern
 Pdef.all.values[3].pattern.type_(\off)
 Pdef.all.values[3].pattern.release
 Pdef.all.values[1].set(\type, \off)
-Pdef(\player11).play
+
+Pdef.all.values[1].isPlaying
+~kl = Pdef.all
+~kl.scanFor(\player9)
+~kl.at(Pdef(\player9))
+[\player8]
+Pdef.all[\player7]
+Pdef.all['bufy']
 Pdef.all
 Pdef.clear
 Pdef.gui
-Pdef.repository
+Pdef.browse
 Pdef(\fxMonitor_14).keys
 Pdef("fxMonitor_4")
 
