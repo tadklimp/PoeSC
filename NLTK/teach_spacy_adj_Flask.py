@@ -26,15 +26,17 @@ app = Flask(__name__)
 def demo():
     get_txt = request.get_data(as_text=True)
     txt = nlp(get_txt)
-    all_adjs = collect_adjectives(txt,"da")
-    return ' '.join(str(e) for e in all_adjs)
+    all_adjs = collect_adjectives(txt,"--")
+    print(all_adjs)
+    # return ' '.join(str(e) for e in all_adjs)
+    return "Nothing"
 
 adj_classes = ['colour', 'size', 'opinion', 'quantity', 'texture', 'age']
 adj_train_set = [
     ['red', 'blue', 'white', 'purple', 'green', 'yellow', 'black', 'turquoise', 'magenta', 'pink'],
     ['big', 'small', 'large', 'huge', 'tiny', 'extensive', 'miniscule', 'long', 'short'] ,
     ['beautiful', 'ugly', 'real', 'true', 'false', 'perfect', 'interesting', 'good', 'bad', 'costly', 'dangerous', 'tricky', 'disgusting', 'tasty', 'smelly', 'cheap', 'boring', 'easy', 'difficult', 'annoying', 'soothing', 'relaxing', 'sleepy', 'shocking', 'surprising', 'expected', 'unacceptable'],
-    ['many', 'lot', 'much', 'few', 'none', 'all', 'some', 'two', 'ten', 'hundred', 'thousands', 'million'],
+    ['many', 'lot', 'much', 'few', 'none', 'all', 'some', 'two', 'ten', 'hundred', 'thousands', 'million', 'thousand'],
     ['woolen', 'metallic', 'wooden', 'solid', 'soft', 'hard', 'grainy', 'brittle', 'smooth' ],
     ['new', 'old', 'ancient', 'future', 'past', 'current', 'long time', 'short time', 'sudden', 'immediate']
 ]

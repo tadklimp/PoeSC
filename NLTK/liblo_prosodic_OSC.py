@@ -69,7 +69,7 @@ def insert_break():
 # put it all together and send to Supercollider-sclang
 def meter_to_sclang(text):
     extract_meter(text)
-    adjectives_to_osc(text)
+    # adjectives_to_osc(text)
     liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight, osc_sylab_text, osc_adjectives)) 
 
 
