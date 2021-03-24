@@ -1,11 +1,13 @@
 # source code mostly from here:
 # https://stackoverflow.com/questions/28575082/classify-a-noun-into-abstract-or-concrete-using-nltk-or-similar
 # https://towardsdatascience.com/large-objects-in-python-classes-165a6f98d840
+# https://www.youtube.com/watch?v=WbEKxcsO66U check this for splitting new lines ??
 
-# from flask import Flask, Response, request
+
 import spacy
 from spacy_syllables import SpacySyllables
 from sklearn.linear_model import LogisticRegression
+from train_sets import adj_classes, adj_train_set
 import numpy as np
 
 # added Spacy Syllables
@@ -14,46 +16,58 @@ import numpy as np
 # print("Pipeline:", nlp.pipe_names)
 
 class Nlp:
+    """ Initialize Spacy and keep it in Memory as a reference. 
+    This way the model doesn't have to be loaded repeatedly. 
+    Initialize Adjective Classifier. Probably this has to be moved in a separate Class. """
     
     model = None
     adj_classifier = None
-    adj_classes = ['colour', 'size', 'opinion', 'quantity', 'texture', 'age', 'weight']
-    adj_train_set = [
-        ['red', 'blue', 'white', 'purple', 'green', 'yellow', 'black', 'turquoise', 'magenta', 'pink'],
-        ['big', 'small', 'large', 'huge', 'tiny', 'extensive', 'miniscule', 'long', 'short'] ,
-        ['beautiful', 'ugly', 'real', 'true', 'false', 'perfect', 'interesting', 'good', 'bad', 'costly', 'dangerous', 'tricky', 'disgusting', 'tasty', 'smelly', 'cheap', 'boring', 'easy', 'difficult', 'annoying', 'soothing', 'relaxing', 'sleepy', 'shocking', 'surprising', 'expected', 'unacceptable'],
-        ['many', 'lot', 'much', 'few', 'none', 'all', 'some', 'two', 'ten', 'hundred', 'thousands', 'million', 'thousand'],
-        ['woolen', 'metallic', 'wooden', 'solid', 'soft', 'hard', 'grainy', 'brittle', 'smooth' ],
-        ['new', 'old', 'ancient', 'future', 'past', 'current', 'long time', 'short time', 'sudden', 'immediate', 'youthful'],
-        ['heavy', 'light', 'hefty', 'weighty', 'overweight', 'massive' ]
-    ]
+
 
     def __init__(self, text):
         self.text = text
+        self.adj_classes = adj_classes
+        self.adj_train_set = adj_train_set
 
     def main():
-        # """ Load Spacy model and keep it in memory """
+        """ Load Spacy model and keep it in memory """
         if Nlp.model is None:
-            Nlp.model = spacy.load("en_core_web_md")
+            Nlp.model = spacy.load("en_core_web_lg")
+            # Nlp.model.add_pipe('line_splitter',before='parser')
+            Nlp.model.add_pipe('sentencizer')
             print(f"Loaded: { Nlp.model } ")
             # g = Nlp.classify_adjectives()
-        print("Calculating ... ")
+        print("Ready ... ")
         return Nlp.model
 
+    # @Language.factory('line_splitter')
+    def new_line_split(self, doc):
+        """ consider new lines as Sentence boundaries """
+        for token in doc[:-1]:
+            if token.text == "\n":
+                doc[token.i+1].is_sent_start = True
+        return doc
+
+    def split_sentences(self):
+        """Split incoming text into sentences"""
+        result = [str(sent).strip() for sent in self.model(self.text).sents]
+        print(result)
+        return result
 
     def classify_adjectives(self):
+        """ classify Adjectives according to given Table  """
         if Nlp.adj_classifier is None:
-            X = np.stack([list(self.model(w))[0].vector for part in self.adj_train_set for w in part])
+            X = np.stack([list(self.model(word))[0].vector for part in self.adj_train_set for word in part] )
             y = [label for label, part in enumerate(self.adj_train_set) for _ in part]
             Nlp.adj_classifier = LogisticRegression(C=0.1, class_weight='balanced', solver='lbfgs', multi_class='auto').fit(X, y)
         print("Classified ...." )    
         return self.adj_classifier
 
-
-    # collect all [adjective, category] in an array
-    def collect_adjectives(self, separator):
-        # nlp_text = nlp(text)
+    def get_adjectives(self, separator):
+        """ collect all [adjective, category, separator] in an array. 
+        Seperator expects a String, useful in Sclang to separate sentences """
         collection = []
+        self.classify_adjectives()
         for token in self.model(self.text):
             if token.pos_ == 'ADJ':
                 collection.append(token)
@@ -63,10 +77,6 @@ class Nlp:
         # print(self.model, self.text)
         return collection
 
-    def get_adjectives(self, separator):
-        self.separator = separator
-        self.classify_adjectives()
-        self.collect_adjectives(self.separator)
 
 
 
@@ -74,6 +84,7 @@ class Nlp:
 
 if __name__ == '__main__':
     main()
+    # print(adj_train_set)
     # text_raw = """a short text proportional proportional attitude."""
 
     # text_raw = Nlp("a beautiful big tree was holding many mangos from its turquoise leaves")

@@ -17,6 +17,7 @@ def callback():
     # print(e.get()) # This is the text you may want to use later
     txt = Nlp(e.get())
     txt.get_adjectives("// ")
+    txt.split_sentences()
 
 
 b = tk.Button(master, text = "OK", width = 10, command = callback)

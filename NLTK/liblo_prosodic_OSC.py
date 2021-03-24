@@ -3,8 +3,6 @@ import prosodic
 import spacy
 import liblo, sys
 from split_sent import split_into_sentences
-from teach_spacy_adj import collect_adjectives
-from teach_spacy_adj import load_model
 
 # setup OSC connection to sclang (57120)
 try:
@@ -36,12 +34,12 @@ def adjectives_to_osc(text):
 # receive text and extract meter with prosodic
 def extract_meter(text):
     sents_splits = split_into_sentences(text)
+    # sents_splits = ["beehwk aries, I didn't know it was planned.", 'Suddenly the earth sacked its ditches']
     for s in sents_splits:
         prosodic_text = prosodic.Text(s)
         # print(s.strip().replace("\n", " "))
         prosodic_labels(prosodic_text)
         insert_break()
-        print(collect_sylls)
 
 
 # prosodic analysis func :
@@ -69,8 +67,9 @@ def insert_break():
 # put it all together and send to Supercollider-sclang
 def meter_to_sclang(text):
     extract_meter(text)
+    print(collect_sylls)
     # adjectives_to_osc(text)
-    liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight, osc_sylab_text, osc_adjectives)) 
+    liblo.send(target,liblo.Bundle(osc_sylab_length, osc_sylab_stress, osc_sylab_weight, osc_sylab_text)) 
 
 
 
@@ -84,7 +83,10 @@ if __name__ == "__main__":
     # As I wended the shores I know,
     # As I walk'd with that electric self seeking types."""
 
-    text_raw = """a beautiful big tree was holding many mangos from its turquoise leaves."""
+    # text_raw = """a beautiful big tree was holding many mangos from its turquoise leaves."""
+    # text_raw = """white, your white pupil thrives cry your cries anomalies"""
+    # text_raw = """white, your white pupil thrives. cry; your cries anomalies."""
+    text_raw = """beehwk aries, I didn't know it was planned. Suddenly the earth sacked its ditches."""
     # text_raw = """a short text proportional proportional attitude bazerkadu."""
     # text_raw = """a bridge above phonetics attitude abbreviation addition. """
     # text_raw = """maybe you think too much, 
