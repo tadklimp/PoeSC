@@ -5,9 +5,11 @@
 
 
 import spacy
+from spacy.language import Language
+from spacy.symbols import ORTH
 from spacy_syllables import SpacySyllables
 from sklearn.linear_model import LogisticRegression
-from train_sets import adj_classes, adj_train_set
+import train_sets
 import numpy as np
 
 # added Spacy Syllables
@@ -22,52 +24,67 @@ class Nlp:
     
     model = None
     adj_classifier = None
-
+    adj_classes = train_sets.adj_classes
+    adj_train_set = train_sets.adj_train_set
 
     def __init__(self, text):
+        # self.text = text.replace("\n"," \n ")
         self.text = text
-        self.adj_classes = adj_classes
-        self.adj_train_set = adj_train_set
 
     def main():
-        """ Load Spacy model and keep it in memory """
+        """ Load Spacy model and Classifiers. Keep them in memory """
+
         if Nlp.model is None:
             Nlp.model = spacy.load("en_core_web_lg")
-            # Nlp.model.add_pipe('line_splitter',before='parser')
+            # special_case = [{ORTH: "\n"}]
+            # Nlp.model.tokenizer.add_special_case("\n", special_case)
+            Nlp.model.add_pipe("line_splitter", before="parser")
             Nlp.model.add_pipe('sentencizer')
             print(f"Loaded: { Nlp.model } ")
-            # g = Nlp.classify_adjectives()
+            print(Nlp.model.pipe_names)
         print("Ready ... ")
-        return Nlp.model
 
-    # @Language.factory('line_splitter')
-    def new_line_split(self, doc):
-        """ consider new lines as Sentence boundaries """
-        for token in doc[:-1]:
-            if token.text == "\n":
-                doc[token.i+1].is_sent_start = True
-        return doc
+        # classify Adjectives according to given Table 
+        if Nlp.adj_classifier is None:
+            X = np.stack([list(Nlp.model(word))[0].vector for part in Nlp.adj_train_set for word in part] )
+            y = [label for label, part in enumerate(Nlp.adj_train_set) for _ in part]
+            Nlp.adj_classifier = LogisticRegression(C=0.1, class_weight='balanced', solver='lbfgs', multi_class='auto').fit(X, y)
+        print("Classified ..." )    
+
+    # define a custom Spacy pipeline, splitting lines at \n
+    # info here: https://spacy.io/usage/processing-pipelines#factories-decorator-component
+    @Language.factory('line_splitter')
+    def new_line_splitter(nlp, name):
+        def line_component(doc):
+            for i, token in enumerate(doc[:-1]):
+                if token.text == "\n":
+                    doc[i+1].is_sent_start = True
+            return doc
+        return line_component
+
 
     def split_sentences(self):
         """Split incoming text into sentences"""
         result = [str(sent).strip() for sent in self.model(self.text).sents]
-        print(result)
+        for i in result:
+            print(i)
+            print("--")
         return result
 
-    def classify_adjectives(self):
-        """ classify Adjectives according to given Table  """
-        if Nlp.adj_classifier is None:
-            X = np.stack([list(self.model(word))[0].vector for part in self.adj_train_set for word in part] )
-            y = [label for label, part in enumerate(self.adj_train_set) for _ in part]
-            Nlp.adj_classifier = LogisticRegression(C=0.1, class_weight='balanced', solver='lbfgs', multi_class='auto').fit(X, y)
-        print("Classified ...." )    
-        return self.adj_classifier
+    # depricated 
+    # def classify_adjectives(self):
+    #     """ classify Adjectives according to given Table  """
+    #     if Nlp.adj_classifier is None:
+    #         X = np.stack([list(self.model(word))[0].vector for part in self.adj_train_set for word in part] )
+    #         y = [label for label, part in enumerate(self.adj_train_set) for _ in part]
+    #         Nlp.adj_classifier = LogisticRegression(C=0.1, class_weight='balanced', solver='lbfgs', multi_class='auto').fit(X, y)
+    #     print("Classified ...." )    
+    #     return self.adj_classifier
 
     def get_adjectives(self, separator):
         """ collect all [adjective, category, separator] in an array. 
         Seperator expects a String, useful in Sclang to separate sentences """
         collection = []
-        self.classify_adjectives()
         for token in self.model(self.text):
             if token.pos_ == 'ADJ':
                 collection.append(token)

@@ -5,6 +5,9 @@ from teach_spacy_adj_Class import Nlp
 import tkinter as tk
 
 Nlp.main()
+# n = Nlp(None)
+# n.load()
+# n.main()
 
 
 master = tk.Tk()

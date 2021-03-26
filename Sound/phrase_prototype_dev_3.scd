@@ -4,7 +4,7 @@
 (
 ~phrase= (
 	id: Ref(0),
-	poly: Ref(false), // affects Pbindef players
+	poly: Ref(false), // affects Pbindef players ==> OR it should select Ppar || Pseq
 	syll_length: Ref([]),
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
@@ -14,6 +14,7 @@
 
 	instr: Ref([]),
 	pitch_material: Ref([]),
+	pitch_offset: Ref(0),
 	scale: Scale.major,
 	steps_octave: 12,
 	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
@@ -41,6 +42,7 @@
 ~phrase.fx_bus_index
 ~phrase.fx.value_(12)
 ~phrase.use{ ~server}
+~phrase.syll_length
 
 
 
@@ -129,8 +131,8 @@
 			\group, group,
 			\addAction, 0,
 			// \group, Pfunc({Group.new}),
-			\dur, 0.25,
-			\degree, Pshuf([0,2,4,5]+5,inf),
+			\dur, 1,
+			\degree, Pshuf([0,2,4,5],inf),
 			\amp, 0.01,
 			\pan, Pwhite(-1,1),
 			\scale, Pfunc{topEnvironment[\phrase].scale},
@@ -150,9 +152,12 @@ PbdefClean.all
 
 
 ~phrase.id.value_(~phrase.id.value+1).changed(\init);
+~phrase.id.value
 
-Pdef.modulateAll(\mtranspose, 0, \scale, Scale.major.tuning_(Tuning.werckmeister))
+Pdef.modulateAll(\mtranspose, Pstep(Pseq([5,2,-2],inf),8), \scale, Scale.major.tuning_(Tuning.werckmeister))
+Pdef.modulateAll(\mtranspose, 0, \scale, Scale.minor.tuning_(Tuning.werckmeister))
 Pdef.modulateAll(\detune, PXLine(1,200,80))
+Pdef.modulateAll(\detune, PXLine(200,1,80))
 Pdef.modulateAll(\detune, PLFTri(4,0,200,0))
 Pdef.modulateAll(\detune, 0)
 Pdef.modulateAll(\amp, 0.001)
@@ -174,10 +179,12 @@ b.numFrames
 	\bufnum, b.bufnum,
 	\degree, Pseq([0,1,2],inf),
 	\pos, Pwhite(0.0,b.numFrames*0.25,inf),
-	\dur, 0.2,
-	\amp,0.3
-).play)
+	\dur, 0.02,
+	\amp,0.1
+))
 Pbindef(\bufy).stop
+Pbindef(\bufy).release(4)
+Pbindef(\bufy, \gtranspose, Pseq([1,4,1,2,4,7,4,3,12]*1.neg,inf))
 
 Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \mtranspose, 0) }}
 Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \scale, Scale.phrygian) }}
@@ -245,7 +252,7 @@ u.free
 		// the List.size and use it as "wait" argument in its conditional execution.
 		var newList = List.new;
 		var local_env = ();
-		var pos = ("pos"++~phrase.id).asSymbol; // create a new name every time
+		var pos = ("pos"++~phrase.id.value).asSymbol; // create a new name every time
 
 		if(~phrase.stack.value==true){// check if phrases are played throughout before new phrase begins
 			// i.e. sequenced/stacked playback
@@ -291,3 +298,4 @@ currentEnvironment.keys
 ~checker[2].value.class
 
 ~phrase
+                         

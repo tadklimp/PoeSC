@@ -16,7 +16,7 @@ OSCdef.new(
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
 		~phrase.syll_length.value_(values[1..]).changed(\value);
-		~phrase.id.value_(~phrase.id+1).changed(\init);
+		~phrase.id.value_(~phrase.id.value+1).changed(\init);
 	},
 	'/sylab/length', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
@@ -127,6 +127,40 @@ OSCdef.new(
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
+
+
+
+OSCdef.new(
+	'/sylab/adj', // Name in the global dictionary
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+		var new_list = List.new;
+
+		// new_list.add(0); // init list
+		/*		values[1..].do{ |i|
+		if (i.isKindOf(Symbol)){
+		if(i != 'Rest(0)') { i.asString.do{ |x|
+		// x.class.postln;
+		case
+		{x == $H}{ new_list.add(2.0)}
+		{x == $L}{ new_list.add(1.0)}
+		}
+		}{
+		new_list.add(0)
+		}
+		}
+		};*/
+
+		// Pdefn(\sylab_weight, Pseq(new_list.asArray, inf));
+		("adjectives are: "++ msg).postln;
+		// new_list.postln;
+
+		// ("weights are: "++ msg[1..]).postln
+	},
+	'/sylab/adj', // A path essentially detailing the name of the listening function
+	nil, // nil means to listen to all incoming IPs/ports
+).fix;
 )
 
 
