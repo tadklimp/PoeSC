@@ -44,22 +44,34 @@
 ~phrase.use{ ~server}
 ~phrase.syll_length
 
-Stanza
-Strophe
+Server.allRunningServers.do{|i| i.numGroups.postln}
+Server.allRunningServers.do{|i| i.numUGens.postln}
+Server.allRunningServers.do{|i| i.numSynths.postln}
+Server.allRunningServers.do{|i| i.avgCPU.postln}
+
 
 (
 ~phrase_init.remove;
 ~phrase_init = SimpleController(~phrase.id).put(
 	\init, { |values, tag, args|
-		var all_srvrs, choose, selected, group, bus;
+		var id, all_srvrs, choose, selected, group, bus;
+		id = ~phrase.id.value;
 		// select the most chilled Server :)
 		all_srvrs= ~phrase.all_srvrs.value.asArray;
+		fork{
+			// 1.wait;
+		// all_srvrs= Server.allRunningServers.asArray;
 		choose = all_srvrs.minIndex({ |item| item.avgCPU.round });
+		// choose = all_srvrs.minIndex({ |item| item.numUGens });
+		// choose = all_srvrs.minIndex({ |item| item.numSynths });
+		// choose = all_srvrs.minIndex({ |item| item.numGroups });
 		selected = all_srvrs[choose]; // selected Server
 		~phrase.server.value_(selected);
+		("==============> "++selected).postln;
+
 
 		// create main Group + fx_bus
-		fork{
+
 			group = Group.new(selected);
 			bus = Bus.audio(selected,2);
 			selected.sync;
@@ -72,12 +84,13 @@ Strophe
 
 			// set main Out bus
 			~phrase.out.value_(0);
-			selected.sync;
+			// selected.sync;
 
 			// start init of selected FX
-			~phrase.fx.changed(\init);
+			// send [id, group, server, fxBus] as args
+			~phrase.fx.changed(\init,[id, group, selected, bus]);
 			{"init done!".postln}.defer(0.5);
-		};
+			};
 
 	}
 ));
@@ -92,11 +105,13 @@ Strophe
 ~fx_init.remove;
 ~fx_init = SimpleController(~phrase.fx).put(
 	\init, { |values, tag, args|
-		var id = ~phrase.id.value;
-		var group = ~phrase.group_main.value;
-		var server = ~phrase.server.value;
-		var fx_bus = ~phrase.fx_bus_index.value;
+		var id = args[0];
+		var group = args[1];
+		var server = args[2];
+		var fx_bus = args[3];
 
+		args.postln;
+		group.postln;
 
 		Pdef((\echo_++id).asSymbol,
 			( type: \on, instrument: \echo,
@@ -134,11 +149,11 @@ Strophe
 			\group, group,
 			\addAction, 0,
 			\dur, 0.5,
-			\degree, Pshuf([0,2,4,5]+2,inf),
-			\amp, 0.1,
+			\degree, Pshuf([0,2,4,5]-[2,5,-2,7].choose+5,inf),
+			\amp, 0.01,
 			\pan, Pwhite(-1,1),
 			\scale, Pfunc{topEnvironment[\phrase].scale},
-			\out, ~phrase.fx_bus_index.value
+			\out, fx_bus.index
 			/*,
 			{ var time=3;
 			fork{ group.release(time);
@@ -154,11 +169,15 @@ PbdefClean.all
 
 
 ~phrase.id.value_(~phrase.id.value+1).changed(\init);
+~phrase.id.value_(~phrase.id.value+1).changed(\init);
+~phrase.id.value_(~phrase.id.value+1).changed(\init);
 ~phrase.id.value
+Pdef.clear
+
 
 Pdef.modulateAll(\mtranspose, Pstep(Pseq([5,2,-2],inf),8), \scale, Scale.major.tuning_(Tuning.werckmeister))
-Pdef.modulateAll(\mtranspose, 0, \scale, Scale.minor.tuning_(Tuning.werckmeister))
-Pdef.modulateAll(\detune, PXLine(1,200,80))
+Pdef.modulateAll(\mtranspose, -3, \scale, Scale.minor.tuning_(Tuning.werckmeister))
+Pdef.modulateAll(\detune, PXLine(1,200,20))
 Pdef.modulateAll(\detune, PXLine(200,1,80))
 Pdef.modulateAll(\detune, PLFTri(4,0,200,0))
 Pdef.modulateAll(\detune, 0)

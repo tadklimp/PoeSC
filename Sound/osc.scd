@@ -1,9 +1,8 @@
-// You cannot open a TCP listening port with sclang :(
-// You will have to use UDP
 NetAddr.langPort; // Generally port 57120 but could be used by another application so check
 thisProcess.openPorts; // See all open ports for sclang.  These are UDP ports
 
 // Trace incoming messages
+OSCFunc.trace(true,true);
 OSCFunc.trace(false);
 ~counter
 (
@@ -12,13 +11,13 @@ OSCdef.freeAll;
 
 
 OSCdef.new(
-	'/sylab/length', // It expects Integers and Rests
+	'/syllab/length', // It expects Integers and Rests
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
 		~phrase.syll_length.value_(values[1..]).changed(\value);
 		~phrase.id.value_(~phrase.id.value+1).changed(\init);
 	},
-	'/sylab/length', // A path essentially detailing the name of the listening function
+	'/syllab/length', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
@@ -27,7 +26,7 @@ OSCdef.new(
 
 //
 OSCdef.new(
-	'/sylab/stress', // Name in the global dictionary
+	'/syllab/stress', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
@@ -50,18 +49,18 @@ OSCdef.new(
 			}
 		};
 
-		Pdefn(\sylab_stress, Pseq(new_list.asArray, 1));
+		Pdefn(\syllab_stress, Pseq(new_list.asArray, 1));
 		("stresses are: "++ msg[1..]).postln;
-		// (Pdefn(\sylab_stress).source.storeArgs).postln;
+		// (Pdefn(\syllab_stress).source.storeArgs).postln;
 		new_list.postln;
 	},
-	'/sylab/stress', // A path essentially detailing the name of the listening function
+	'/syllab/stress', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
 
 OSCdef.new(
-	'/sylab/weight', // Name in the global dictionary
+	'/syllab/weight', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
@@ -82,13 +81,13 @@ OSCdef.new(
 			}
 		};
 
-		Pdefn(\sylab_weight, Pseq(new_list.asArray, inf));
+		Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
 		("weights are: "++ msg[1..]).postln;
 		new_list.postln;
 
 		// ("weights are: "++ msg[1..]).postln
 	},
-	'/sylab/weight', // A path essentially detailing the name of the listening function
+	'/syllab/weight', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
@@ -96,7 +95,7 @@ OSCdef.new(
 
 
 OSCdef.new(
-	'/sylab/text', // Name in the global dictionary
+	'/syllab/text', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
@@ -117,13 +116,13 @@ OSCdef.new(
 		}
 		};*/
 
-		// Pdefn(\sylab_weight, Pseq(new_list.asArray, inf));
+		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
 		("texts are: "++ msg[1..]).postln;
-		new_list.postln;
+		// new_list.postln;
 
 		// ("weights are: "++ msg[1..]).postln
 	},
-	'/sylab/text', // A path essentially detailing the name of the listening function
+	'/syllab/text', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
@@ -131,7 +130,7 @@ OSCdef.new(
 
 
 OSCdef.new(
-	'/sylab/adj', // Name in the global dictionary
+	'/phrase/adj', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
@@ -152,13 +151,13 @@ OSCdef.new(
 		}
 		};*/
 
-		// Pdefn(\sylab_weight, Pseq(new_list.asArray, inf));
+		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
 		("adjectives are: "++ msg).postln;
 		// new_list.postln;
 
 		// ("weights are: "++ msg[1..]).postln
 	},
-	'/sylab/adj', // A path essentially detailing the name of the listening function
+	'/phrase/adj', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 )
@@ -175,29 +174,30 @@ OSCdef.freeAll;
 (
 Pbind(
 	\dur, 0.5,
-	\degree, Pdefn(\sylab_stress)*7,
+	\degree, Pdefn(\syllab_stress)*7,
 	\amp, 0.5
-	// \stretch, Pconst(21,Pdefn(\sylab_weight)).trace(prefix:'stretch: ')
+	// \stretch, Pconst(21,Pdefn(\syllab_weight)).trace(prefix:'stretch: ')
 ).play
 );
 
 
 
-// \sylab_length defines the Macro-Talea of the phrase, i.e a general multiplier of speed
+// \syllab_length defines the Macro-Talea of the phrase, i.e a general multiplier of speed
 // \syllab_stress is simply assigned here to pitch
 (
 
 Pbindef(\try,
-	\talea_trigger, Pn(Pdefn(\sylab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
+	\talea_trigger, Pn(Pdefn(\syllab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
 	// this fixes the problem of having a Pn before the Pgate
 	// it should be the same Pdefn as the \dur Pdefn
-	\speed, Pgate(Pdefn(\sylab_length),1,\step1).trace, // talea multiplier for \dur
-	\degree, Pn(Pshuf([1,3,5,7]),inf),
-	\octave, Pn((Pdefn(\sylab_stress)*2)+3,inf), // syllab stress effects octave
+	\speed, Pgate(Pdefn(\syllab_length),1,\step1).trace, // talea multiplier for \dur
+	// \degree, Pn(Pshuf([1,3,5,7]),inf),
+	\degree, Pn(Pshuf([1]),inf),
+	\octave, Pn((Pdefn(\syllab_stress)*2)+3,inf), // syllab stress effects octave
 	\dur, 0.125*Pkey(\speed) ,
 	\amp, 0.5
 	// \dur, 0.25 ,
-).play;
+).play(quant:1);
 )
 
 
@@ -206,24 +206,24 @@ Pbindef(\try,
 (
 
 Pbindef(\try,
-	\talea_trigger, Pn(Pdefn(\sylab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
+	\talea_trigger, Pn(Pdefn(\syllab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
 	// this fixes the problem of having a Pn before the Pgate
 	// it should be the same Pdefn as the \dur Pdefn
-	\speed, Pgate(Pdefn(\sylab_length),1,\step1).trace, // talea multiplier for \dur
+	\speed, Pgate(Pdefn(\syllab_length),1,\step1).trace, // talea multiplier for \dur
 	\degree, Pn(Pshuf([1,3,5,7]),inf),
-	\octave, Pn((Pdefn(\sylab_stress)*2)+3,inf), // syllab stress effects octave
+	\octave, Pn((Pdefn(\syllab_stress)*2)+3,inf), // syllab stress effects octave
 	\dur, 0.25*Pkey(\speed) ,
 	\pan, -0.5
 );
 
 
 Pbindef(\try2,
-	\talea_trigger, Pn(Pdefn(\sylab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
+	\talea_trigger, Pn(Pdefn(\syllab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
 	// this fixes the problem of having a Pn before the Pgate
 	// it should be the same Pdefn as the \dur Pdefn
-	\speed, Pgate(Pdefn(\sylab_length),1,\step1).trace, // talea multiplier for \dur
+	\speed, Pgate(Pdefn(\syllab_length),1,\step1).trace, // talea multiplier for \dur
 	\degree, Pn(Pshuf([1,3,5,7]+4),inf),
-	\octave, Pn((Pdefn(\sylab_stress)*2)+3,inf), // syllab stress effects octave
+	\octave, Pn((Pdefn(\syllab_stress)*2)+3,inf), // syllab stress effects octave
 	\dur, 0.5*Pkey(\speed) ,
 	\pan, 0.5
 );
