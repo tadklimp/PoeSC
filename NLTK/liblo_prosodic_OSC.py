@@ -78,15 +78,15 @@ if __name__ == "__main__":
     os.chdir("/Users/Makis/Desktop/Musikfonds 2020_21-Research/PoeSC_alpha Python/NLTK")
 
     ############ Raw Text ######################
-    # text_raw = """and then as I thought the old thought of likenesses,
-    # These you presented to me you fish-shaped island,
-    # As I wended the shores I know,
-    # As I walk'd with that electric self seeking types."""
+    text_raw = """and then as I thought the old thought of likenesses,
+    These you presented to me you fish-shaped island,
+    As I wended the shores I know,
+    As I walk'd with that electric self seeking types."""
 
     # text_raw = """a beautiful big tree was holding many mangos from its turquoise leaves."""
     # text_raw = """white, your white pupil thrives cry your cries anomalies"""
     # text_raw = """white, your white pupil thrives. cry; your cries anomalies."""
-    text_raw = """beehwk aries, I didn't know it was planned. Suddenly the earth sacked its ditches."""
+    # text_raw = """beehwk aries, I didn't know it was planned. Suddenly the earth sacked its ditches."""
     # text_raw = """a short text proportional proportional attitude bazerkadu."""
     # text_raw = """a bridge above phonetics attitude abbreviation addition. """
     # text_raw = """maybe you think too much, 

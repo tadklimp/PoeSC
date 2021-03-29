@@ -28,7 +28,6 @@ class Nlp:
     adj_train_set = train_sets.adj_train_set
 
     def __init__(self, text):
-        # self.text = text.replace("\n"," \n ")
         self.text = text
 
     def main():
@@ -52,7 +51,7 @@ class Nlp:
         print("Classified ..." )    
 
     # define a custom Spacy pipeline, splitting lines at \n
-    # info here: https://spacy.io/usage/processing-pipelines#factories-decorator-component
+    # more info here: https://spacy.io/usage/processing-pipelines#factories-decorator-component
     @Language.factory('line_splitter')
     def new_line_splitter(nlp, name):
         def line_component(doc):
@@ -65,11 +64,19 @@ class Nlp:
 
     def split_sentences(self):
         """Split incoming text into sentences"""
-        result = [str(sent).strip() for sent in self.model(self.text).sents]
-        for i in result:
-            print(i)
-            print("--")
-        return result
+        sentences = [str(sent).strip() for sent in self.model(self.text).sents]
+        # if sentence is empty, clear it 
+        for i, sent in enumerate(sentences):
+            if len(sent) == 0:
+                del sentences[i]
+        # if Stanza starts with '//' it denotes parallel playback of sentences/phrases
+        if sentences[0] == "//": 
+            print("parallel!")
+            del sentences[0]
+        # print(len(sentences))
+        # print(sentences)
+        return sentences
+
 
     # depricated 
     # def classify_adjectives(self):
