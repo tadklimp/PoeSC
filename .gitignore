@@ -4,8 +4,8 @@ Sound/audio/
 #ignore pdfs
 *.pdf
 
-#ignore __pycache__
-__pycache__/
-
 #ignore .svg
 *.svg
+
+#ignore __pycache__
+__pycache__/
