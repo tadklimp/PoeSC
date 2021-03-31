@@ -29,11 +29,11 @@ def callback():
     txt.split_sentences()
     for i in txt.split_sentences():
         # prosodic_text = prosodic.Text(i)
+        sleep(0.2) #delay needed in sclang in order to choose available Server
         o = Osc_send()
         o.attach_labels(i)
         o.meter_to_sclang()
         print(i)
-        # sleep(1)
 
 
 b = tk.Button(window, text = "OK", width = 10, command = callback)

@@ -43,12 +43,12 @@
 ~phrase.fx.value_(12)
 ~phrase.use{ ~server}
 ~phrase.syll_length
-
+Thread
 Server.allRunningServers.do{|i| i.numGroups.postln}
 Server.allRunningServers.do{|i| i.numUGens.postln}
 Server.allRunningServers.do{|i| i.numSynths.postln}
 Server.allRunningServers.do{|i| i.avgCPU.postln}
-
+Pdef.clear
 
 (
 ~phrase_init.remove;
@@ -56,22 +56,19 @@ Server.allRunningServers.do{|i| i.avgCPU.postln}
 	\init, { |values, tag, args|
 		var id, all_srvrs, choose, selected, group, bus;
 		id = ~phrase.id.value;
+
 		// select the most chilled Server :)
 		all_srvrs= ~phrase.all_srvrs.value.asArray;
+		// update Servers' status. It helps with choosing server within fast
+		all_srvrs.do{|i| i.status};
 		fork{
-			// 1.wait;
-		// all_srvrs= Server.allRunningServers.asArray;
-		choose = all_srvrs.minIndex({ |item| item.avgCPU.round });
-		// choose = all_srvrs.minIndex({ |item| item.numUGens });
-		// choose = all_srvrs.minIndex({ |item| item.numSynths });
-		// choose = all_srvrs.minIndex({ |item| item.numGroups });
-		selected = all_srvrs[choose]; // selected Server
-		~phrase.server.value_(selected);
-		("==============> "++selected).postln;
+			// choose = all_srvrs.minIndex({ |item| item.avgCPU.round });
+			choose = all_srvrs.minIndex({ |item| item.numGroups });
+			selected = all_srvrs[choose]; // selected Server
+			~phrase.server.value_(selected);
+			("==============> "++selected).postln;
 
-
-		// create main Group + fx_bus
-
+			// create main Group + fx_bus
 			group = Group.new(selected);
 			bus = Bus.audio(selected,2);
 			selected.sync;
@@ -90,7 +87,7 @@ Server.allRunningServers.do{|i| i.avgCPU.postln}
 			// send [id, group, server, fxBus] as args
 			~phrase.fx.changed(\init,[id, group, selected, bus]);
 			{"init done!".postln}.defer(0.5);
-			};
+		};
 
 	}
 ));
@@ -148,8 +145,8 @@ Server.allRunningServers.do{|i| i.avgCPU.postln}
 			\server, server,
 			\group, group,
 			\addAction, 0,
-			\dur, 0.5,
-			\degree, Pshuf([0,2,4,5]-[2,5,-2,7].choose+5,inf),
+			\dur, 1,
+			\degree, Pshuf([0,2,4,5]-[2,5,-2,7].choose,inf),
 			\amp, 0.01,
 			\pan, Pwhite(-1,1),
 			\scale, Pfunc{topEnvironment[\phrase].scale},
@@ -320,4 +317,3 @@ currentEnvironment.keys
 ~checker[2].value.class
 
 ~phrase
-                         
