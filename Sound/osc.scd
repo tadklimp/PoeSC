@@ -6,14 +6,39 @@ OSCFunc.trace(true,true);
 OSCFunc.trace(false);
 ~counter
 (
-
+// reset
 OSCdef.freeAll;
+
+// Assign a new ID to each new Stanza
+// And pass the number of included phrases
+OSCdef.new(
+	'/stanza/trigger',
+	{ |msg, time, recAddr, recPort|
+		~stanza.id.value_(~stanza.id.value+1).changed(\init);
+		~stanza.num_of_phrases.value_(msg[1]);
+	},
+	'/stanza/trigger', // A path detailing the name of the listening function
+	nil, // nil means to listen to all incoming IPs/ports
+).fix;
+
+// Check Stanza's playback mode (Serial or Parallel)
+OSCdef.new(
+	'/stanza/mode',
+	{ |msg, time, recAddr, recPort|
+		case
+		{msg[1] == 'seq'} { ~stanza.mode.value_('seq') }
+		{msg[1] == 'par'} { ~stanza.mode.value_('par') };
+	},
+	'/stanza/mode',
+	nil,
+).fix;
 
 
 OSCdef.new(
 	'/syllab/length', // It expects Integers and Rests
 	{ |msg, time, recAddr, recPort|
 		var values = msg;
+		recAddr.postln;
 		~phrase.syll_length.value_(values[1..]).changed(\value);
 		~phrase.id.value_(~phrase.id.value+1).changed(\init);
 	},

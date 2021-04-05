@@ -65,17 +65,17 @@ class Nlp:
     def split_sentences(self):
         """Split incoming text into sentences"""
         sentences = [str(sent).strip() for sent in self.model(self.text).sents]
+        mode = "seq"
         # if sentence is empty, clear it 
         for i, sent in enumerate(sentences):
             if len(sent) == 0:
                 del sentences[i]
         # if Stanza starts with '//' it denotes parallel playback of sentences/phrases
-        if sentences[0] == "//": 
-            print("parallel!")
+        if sentences[0] == "//" or sentences[0] == "//\n": 
+            mode = "par"
             del sentences[0]
-        # print(len(sentences))
-        # print(sentences)
-        return sentences
+        print([mode, sentences])
+        return [mode,sentences]
 
 
     # depricated 
@@ -108,14 +108,6 @@ class Nlp:
 
 if __name__ == '__main__':
     main()
-    # print(adj_train_set)
-    # text_raw = """a short text proportional proportional attitude."""
-
-    # text_raw = Nlp("a beautiful big tree was holding many mangos from its turquoise leaves")
-    # text_raw.get_adjectives("---")
-    # text_raw = "a beautiful big tree was holding many mangos from its turquoise leaves"
-    # text_raw = nlp("some of them will hold a brown book, which i find pedantic in its miniscule content. She asked for a white t-shirt, that was bleached into colourful smelly arrogance. Then the thick sharp edge of the knife glimmed onto her face, bursts into unexpected pie of gooey substance, that stood there with a sudden thump")
-
 
 
 

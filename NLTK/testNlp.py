@@ -4,32 +4,36 @@
 
 from teach_spacy_adj_Class import Nlp
 import tkinter as tk
-# import prosodic
 from Osc_send_class import Osc_send
 from time import sleep
 
 Nlp.main()
 Osc_send.main()
 
-# n = Nlp(None)
-# n.load()
-# n.main()
 
-
+# create new tkinter Window
 window = tk.Tk()
-# e = tk.Entry(window)
 e = tk.Text(window, bg="black", fg="white", undo="true")
 e.pack()
-
 e.focus_set()
 
+
+# main Routine
 def callback():
     txt = Nlp(e.get("1.0", tk.END))
     txt.get_adjectives("// ")
-    txt.split_sentences()
-    for i in txt.split_sentences():
-        # prosodic_text = prosodic.Text(i)
-        sleep(0.2) #delay needed in sclang in order to choose available Server
+    splits = txt.split_sentences()
+    # trigger new Stanza and pass num of phrases
+    Osc_send.new_stanza_trigger(len(splits[1]))
+    # check if playback mode is seq or par
+    if splits[0] == "par":
+        Osc_send.playback_mode("par")
+    elif splits[0] == "seq":
+        Osc_send.playback_mode("seq")
+
+    for i in splits[1]:
+    # delay needed in sclang in order to choose available Server
+        sleep(0.2) 
         o = Osc_send()
         o.attach_labels(i)
         o.meter_to_sclang()

@@ -2,9 +2,60 @@
 // solved mostly cleanup functions
 
 (
+~stanza = (
+	id: Ref(0),
+	mode: Ref('seq'),
+	num_of_phrases: Ref(0),
+	scale: Scale.major,
+	steps_octave: Ref(12),
+	phrases: Ref(List.new)
+);
+);
+
+(
+// initialize new Stanza
+// for every new Stanza: reset the Phrases List
+~stanza_init.remove;
+~stanza_init = SimpleController(~stanza.id).put(
+	\init, {|values, tag, args|
+		~stanza.phrases.value_(List.new);
+	};
+);
+
+// Select Pseq or Ppar as the main playback mode
+~stanza_mode.remove;
+~stanza_mode = SimpleController(~stanza.mode).put(
+	\mode, {|values, tag, args|
+		var phrases = ~stanza.phrases.value.asArray;
+		case
+		{~stanza.mode.value == 'seq'} {Pseq( phrases ).play(quant:1)}
+		{~stanza.mode.value == 'par'} {Ppar( phrases ).play(quant:1)}
+	}
+);
+
+// make sure all phrases are loaded on the Servers before the playback starts
+// underlying Logic: receive the num_of_phrases and compare if the size of the
+// loaded-phrases-list is the same. If yes, then start playback.
+~stanza_ready_to_play.remove;
+~stanza_ready_to_play = SimpleController(~stanza.phrases).put(
+	\update, {|values, tag, args|
+		var phrases = ~stanza.phrases.value.asArray;
+		var num_phrases = ~stanza.num_of_phrases.value;
+		if (phrases.size == num_phrases){
+			// if ready trigger the appropriate Controller
+			~stanza.mode.changed(\mode);
+		}
+	}
+);
+
+);
+
+
+
+(
 ~phrase= (
 	id: Ref(0),
-	poly: Ref(false), // affects Pbindef players ==> OR it should select Ppar || Pseq
+
 	syll_length: Ref([]),
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
@@ -15,8 +66,7 @@
 	instr: Ref([]),
 	pitch_material: Ref([]),
 	pitch_offset: Ref(0),
-	scale: Scale.major,
-	steps_octave: 12,
+
 	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
 	recursion: Ref(true), // affects Pbindef players
 
@@ -43,7 +93,7 @@
 ~phrase.fx.value_(12)
 ~phrase.use{ ~server}
 ~phrase.syll_length
-Thread
+
 Server.allRunningServers.do{|i| i.numGroups.postln}
 Server.allRunningServers.do{|i| i.numUGens.postln}
 Server.allRunningServers.do{|i| i.numSynths.postln}
@@ -59,7 +109,7 @@ Pdef.clear
 
 		// select the most chilled Server :)
 		all_srvrs= ~phrase.all_srvrs.value.asArray;
-		// update Servers' status. It helps with choosing server within fast
+		// update Servers' status. It helps with choosing server when receiving very fast OSC msgs
 		all_srvrs.do{|i| i.status};
 		fork{
 			// choose = all_srvrs.minIndex({ |item| item.avgCPU.round });
@@ -125,44 +175,49 @@ Pdef.clear
 				server: server, group: group,
 				addAction: 1, in: fx_bus, out:0)).play;
 
-
-		PbdefClean(
-			//cleanup function
-			{ var time=3;
-				fork{
-					group.release(time);
-					(time+1).wait;
-					group.free;
-					Pdef.all.keys.do{ |key,i|
-						if (key.asString.contains(id.asString)) { Pdef(key).remove}
-					};
-					"cleared".postln;
-				}
-			},
-			// name
-			(\player++id).asSymbol,
-			// Pbind
-			\server, server,
-			\group, group,
-			\addAction, 0,
-			\dur, 1,
-			\degree, Pshuf([0,2,4,5]-[2,5,-2,7].choose,inf),
-			\amp, 0.01,
-			\pan, Pwhite(-1,1),
-			\scale, Pfunc{topEnvironment[\phrase].scale},
-			\out, fx_bus.index
-			/*,
-			{ var time=3;
-			fork{ group.release(time);
-			(time+1).wait;
-			group.free}
-			}*/
-		).play(quant:1);
-
+		~stanza.phrases.value.add(
+			PbdefClean(
+				//cleanup function
+				{ var time=3;
+					fork{
+						group.release(time);
+						(time+1).wait;
+						fx_bus.free;
+						group.free;
+						Pdef.all.keys.do{ |key,i|
+							if (key.asString.contains(id.asString)) { Pdef(key).remove}
+						};
+						"cleared".postln;
+					}
+				},
+				// name
+				(\player++id).asSymbol,
+				// Pbind
+				\server, server,
+				\group, group,
+				\addAction, 0,
+				\dur, 1,
+				\degree, Pshuf([0,2,4,5]+[2,5,-2,7].choose,2),
+				\amp, 0.01,
+				\pan, Pwhite(-1,1),
+				\scale, Pfunc{topEnvironment[\stanza].scale},
+				\out, fx_bus.index
+				/*,
+				{ var time=3;
+				fork{ group.release(time);
+				(time+1).wait;
+				group.free}
+				}*/
+		));
+		~stanza.phrases.changed(\update);
 	}
 ))
 
-PbdefClean.all
+~stanza.phrases.value.asArray
+Pseq(~stanza.phrases.value.asArray).play(quant:1)
+~stanza.phrases.value
+~stanza.id.value
+~stanza.mode.value
 
 
 ~phrase.id.value_(~phrase.id.value+1).changed(\init);
@@ -173,7 +228,7 @@ Pdef.clear
 
 
 Pdef.modulateAll(\mtranspose, Pstep(Pseq([5,2,-2],inf),8), \scale, Scale.major.tuning_(Tuning.werckmeister))
-Pdef.modulateAll(\mtranspose, -3, \scale, Scale.minor.tuning_(Tuning.werckmeister))
+Pdef.modulateAll(\mtranspose, -2, \scale, Scale.major.tuning_(Tuning.werckmeister))
 Pdef.modulateAll(\detune, PXLine(1,200,20))
 Pdef.modulateAll(\detune, PXLine(200,1,80))
 Pdef.modulateAll(\detune, PLFTri(4,0,200,0))
