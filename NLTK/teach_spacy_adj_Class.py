@@ -71,7 +71,7 @@ class Nlp:
             if len(sent) == 0:
                 del sentences[i]
         # if Stanza starts with '//' it denotes parallel playback of sentences/phrases
-        if sentences[0] == "//" or sentences[0] == "//\n": 
+        if sentences[0][0] == "/" and sentences[0][1] == "/": 
             mode = "par"
             del sentences[0]
         print([mode, sentences])
@@ -87,16 +87,16 @@ class Nlp:
     #         Nlp.adj_classifier = LogisticRegression(C=0.1, class_weight='balanced', solver='lbfgs', multi_class='auto').fit(X, y)
     #     print("Classified ...." )    
     #     return self.adj_classifier
-
-    def get_adjectives(self, separator):
+    @staticmethod
+    def get_adjectives(text):
         """ collect all [adjective, category, separator] in an array. 
         Seperator expects a String, useful in Sclang to separate sentences """
         collection = []
-        for token in self.model(self.text):
+        for token in Nlp.model(text):
             if token.pos_ == 'ADJ':
-                collection.append(token)
-                collection.append(self.adj_classes[self.adj_classifier.predict([token.vector])[0]])
-                collection.append(separator)
+                # collection.append(token)
+                collection.append(Nlp.adj_classes[Nlp.adj_classifier.predict([token.vector])[0]])
+                # collection.append(separator)
         print(collection)
         # print(self.model, self.text)
         return collection

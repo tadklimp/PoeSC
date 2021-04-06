@@ -13,24 +13,16 @@
 
 (
 // initialize new Stanza
-// for every new Stanza: reset its Phrases List
+// for every new Stanza-> reset its Phrases List
+// reset Phrase id counter
 ~stanza_init.remove;
 ~stanza_init = SimpleController(~stanza.id).put(
 	\init, {|values, tag, args|
 		~stanza.phrases.value_(List.new);
+		~phrase.id.value_(0);
 	};
 );
 
-// Select Pseq or Ppar as the main playback mode
-~stanza_mode.remove;
-~stanza_mode = SimpleController(~stanza.mode).put(
-	\mode, {|values, tag, args|
-		var phrases = ~stanza.phrases.value.asArray;
-		case
-		{~stanza.mode.value == 'seq'} {Pseq( phrases ).play(quant:1)}
-		{~stanza.mode.value == 'par'} {Ppar( phrases ).play(quant:1)}
-	}
-);
 
 // make sure all phrases are loaded on the Servers before the playback starts
 // underlying Logic: receive the num_of_phrases and compare if the size of the
@@ -48,6 +40,18 @@
 	}
 );
 
+// this is the main Player for each Stanza
+// Select Pseq or Ppar as the main playback mode
+~stanza_mode.remove;
+~stanza_mode = SimpleController(~stanza.mode).put(
+	\mode, {|values, tag, args|
+		var phrases = ~stanza.phrases.value.asArray;
+		case
+		{~stanza.mode.value == 'seq'} {Pseq( phrases ).play(quant:1)}
+		{~stanza.mode.value == 'par'} {Ppar( phrases ).play(quant:1)}
+	}
+);
+
 );
 
 
@@ -60,7 +64,7 @@
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
 	num_words: 0,
-	adjs: Ref([]),
+	adjectives: Ref([]),
 	nouns: Ref([]),
 
 	instr: Ref([]),
@@ -70,42 +74,65 @@
 	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
 	recursion: Ref(true), // affects Pbindef players
 
-	fx:Ref([]),
+
 	all_srvrs: { Server.allRunningServers },
 	server: Ref(nil),
 	group_main: Ref(nil),
 	group_id: Ref(0),
+
+	fx_list: Ref([]),
+	fx_maker: { // double function so it doesn't evaluate as soon as it is called !
+		{ |id, group, server, fx_bus, fx_name|
+			Pdef((fx_name++'_'++id).asSymbol,
+				( type: \on, instrument: fx_name,
+					server: server, group: group,
+					addAction: 1, out: fx_bus)).play
+		}
+	},
 	fx_bus: Ref(nil),
 	fx_bus_index: Ref(nil),
+	fx_builder: Ref(nil),
+	main_builder: Ref(nil),
 	out: Ref(0)
 );
 );
-~phrase.stack.value_(false)
-~phrase.stack.value_(true)
-~phrase.stack.value
-~phrase.keys
 
-~phrase.server
-~phrase.group_main.value
-~phrase.group_id
-~phrase.fx_bus
-~phrase.fx_bus_index
-~phrase.fx.value_(12)
-~phrase.use{ ~server}
-~phrase.syll_length
-
-Server.allRunningServers.do{|i| i.numGroups.postln}
-Server.allRunningServers.do{|i| i.numUGens.postln}
-Server.allRunningServers.do{|i| i.numSynths.postln}
-Server.allRunningServers.do{|i| i.avgCPU.postln}
-Pdef.clear
+~phrase.adjectives
 
 (
+// map adjectives to responding effects
+~map_adjs_to_fx.remove;
+~map_adjs_to_fx = SimpleController(~phrase.adjectives).put(
+	\update, { |values, tag, args|
+		var list = List.new;
+		("the values are: " ++ values).postln;
+		if (values.value.size > 0){
+			values.value.do{ |x|
+				case
+				{x == 'colour'}{ list.add(\verb) }
+				// {x == 'size'}{ list.add(\delay) }
+				{x == 'opinion'}{ list.add(\echo) }
+				/*{x == 'quantity'}{ list.add() }
+				{x == 'texture'}{ list.add() }
+				{x == 'age'}{ list.add() }
+				{x == 'weight'}{ list.add() }
+				{x == 'state'}{ list.add() }*/
+				;
+			};
+			~phrase.fx_list.value_(list);
+		}{
+			~phrase.fx_list.value_([]);
+		}
+	}
+);
+
 ~phrase_init.remove;
 ~phrase_init = SimpleController(~phrase.id).put(
 	\init, { |values, tag, args|
-		var id, all_srvrs, choose, selected, group, bus;
-		id = ~phrase.id.value;
+		var id_stanza, id_phrase, id, all_srvrs, choose, selected, group, bus;
+		id_stanza = ~stanza.id.value.asSymbol;
+		id_phrase = ~phrase.id.value.asSymbol;
+		id = id_stanza++'_'++id_phrase;
 
 		// select the most chilled Server :)
 		all_srvrs= ~phrase.all_srvrs.value.asArray;
@@ -135,45 +162,46 @@ Pdef.clear
 
 			// start init of selected FX
 			// send [id, group, server, fxBus] as args
-			~phrase.fx.changed(\init,[id, group, selected, bus]);
-			{"init done!".postln}.defer(0.5);
+			~phrase.fx_builder.changed(\init,[id, group, selected, bus]);
 		};
 
 	}
-));
+);
 
 
 
-
-
-
-
-(
 ~fx_init.remove;
-~fx_init = SimpleController(~phrase.fx).put(
+~fx_init = SimpleController(~phrase.fx_builder).put(
 	\init, { |values, tag, args|
 		var id = args[0];
 		var group = args[1];
 		var server = args[2];
 		var fx_bus = args[3];
 
-		args.postln;
-		group.postln;
-
-		Pdef((\echo_++id).asSymbol,
-			( type: \on, instrument: \echo,
-				server: server, group: group,
-				addAction: 1, out: fx_bus)).play;
-
-		Pdef((\verb_++id).asSymbol,
-			( type: \on, instrument: \verb,
-				server: server, group: group,
-				addAction: 1, out: fx_bus)).play;
-
+		// if the fx list is not empty, create the FX chain
+		if (~phrase.fx_list.value.size > 0){
+			~phrase.fx_list.value.do{ |fx_name|
+				~phrase.fx_maker.(id, group, server, fx_bus, fx_name)
+			}
+		};
+		// always instantiate a monitoring fx as the last element in chain
 		Pdef((\fxMonitor_++id).asSymbol,
 			( type: \on, instrument: \monitor,
 				server: server, group: group,
 				addAction: 1, in: fx_bus, out:0)).play;
+
+		~phrase.main_builder.changed(\init,[id, group, server, fx_bus]);
+	}
+);
+
+
+~phrase_builder.remove;
+~phrase_builder = SimpleController(~phrase.main_builder).put(
+	\init, { |values, tag, args|
+		var id = args[0];
+		var group = args[1];
+		var server = args[2];
+		var fx_bus = args[3];
 
 		~stanza.phrases.value.add(
 			PbdefClean(
@@ -187,7 +215,7 @@ Pdef.clear
 						Pdef.all.keys.do{ |key,i|
 							if (key.asString.contains(id.asString)) { Pdef(key).remove}
 						};
-						"cleared".postln;
+						// "cleared".postln;
 					}
 				},
 				// name
@@ -211,7 +239,10 @@ Pdef.clear
 		));
 		~stanza.phrases.changed(\update);
 	}
-))
+);
+
+);
+
 
 ~stanza.phrases.value.asArray
 Pseq(~stanza.phrases.value.asArray).play(quant:1)
@@ -228,7 +259,7 @@ Pdef.clear
 
 
 Pdef.modulateAll(\mtranspose, Pstep(Pseq([5,2,-2],inf),8), \scale, Scale.major.tuning_(Tuning.werckmeister))
-Pdef.modulateAll(\mtranspose, -2, \scale, Scale.major.tuning_(Tuning.werckmeister))
+Pdef.modulateAll(\mtranspose, 0, \scale, Scale.major.tuning_(Tuning.werckmeister))
 Pdef.modulateAll(\detune, PXLine(1,200,20))
 Pdef.modulateAll(\detune, PXLine(200,1,80))
 Pdef.modulateAll(\detune, PLFTri(4,0,200,0))

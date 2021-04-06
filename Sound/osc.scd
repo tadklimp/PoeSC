@@ -10,7 +10,7 @@ OSCFunc.trace(false);
 OSCdef.freeAll;
 
 // Assign a new ID to each new Stanza
-// And pass the number of included phrases
+// and pass the number of included phrases
 OSCdef.new(
 	'/stanza/trigger',
 	{ |msg, time, recAddr, recPort|
@@ -155,41 +155,37 @@ OSCdef.new(
 
 
 OSCdef.new(
-	'/phrase/adj', // Name in the global dictionary
+	'/phrase/adj',
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
 		var new_list = List.new;
 
-		// new_list.add(0); // init list
-		/*		values[1..].do{ |i|
-		if (i.isKindOf(Symbol)){
-		if(i != 'Rest(0)') { i.asString.do{ |x|
-		// x.class.postln;
-		case
-		{x == $H}{ new_list.add(2.0)}
-		{x == $L}{ new_list.add(1.0)}
-		}
-		}{
-		new_list.add(0)
-		}
-		}
-		};*/
+		// add new Adjectives to ~phrase dictionary
+		values[1..].do{ |i|
+			if (i.isKindOf(Symbol)){
+				if(i != 'Rest(0)') {
+					i.do{ |x|
+						new_list.add(x);
+				}};
+				~phrase.adjectives.value_(new_list.asArray).changed(\update);
+			}
+		};
 
-		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
-		("adjectives are: "++ msg).postln;
-		// new_list.postln;
-
-		// ("weights are: "++ msg[1..]).postln
+		// if there are no Adjectives return an empty Array
+		if (values[1..].size == 0){
+			~phrase.adjectives.value_([]).changed(\update);
+		};
 	},
-	'/phrase/adj', // A path essentially detailing the name of the listening function
-	nil, // nil means to listen to all incoming IPs/ports
+	'/phrase/adj',
+	nil,
 ).fix;
 )
 
 
 
 OSCdef.all; // All OSC listening functions stored as dictionary
+OSCdef.all.keys
 OSCdef.freeAll;
 
 

@@ -1,6 +1,6 @@
 
 # Adjectives Train Sets
-adj_classes = ['colour', 'size', 'opinion', 'quantity', 'texture', 'age', 'weight', 'state']
+adj_classes = ['colour', 'size', 'opinion', 'quantity', 'texture', 'age', 'weight', 'state', 'shape']
 adj_train_set = [
     ['red', 'blue', 'white', 'purple', 'green', 'yellow', 'black', 'turquoise', 'magenta', 'pink'],
     ['big', 'small', 'large', 'huge', 'tiny', 'extensive', 'miniscule', 'long', 'short'] ,
@@ -9,5 +9,6 @@ adj_train_set = [
     ['woolen', 'metallic', 'wooden', 'solid', 'soft', 'hard', 'grainy', 'brittle', 'smooth' ],
     ['new', 'old', 'ancient', 'future', 'past', 'current', 'long time', 'short time', 'sudden', 'immediate', 'youthful'],
     ['heavy', 'light', 'hefty', 'weighty', 'overweight', 'massive' ],
-    ['mad', 'sane', 'happy', 'sad', 'furious', 'naked', 'dressed', 'undisguised', 'invisible', 'visible', 'annoyed', 'relaxed', 'sleepy']
+    ['mad', 'sane', 'happy', 'sad', 'furious', 'naked', 'dressed', 'undisguised', 'invisible', 'visible', 'annoyed', 'relaxed', 'sleepy'],
+    ['triangle', 'square', 'sawtooth', 'curved', 'bended', 'linear', 'exponential']
 ]

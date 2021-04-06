@@ -13,11 +13,13 @@
 
 (
 // initialize new Stanza
-// for every new Stanza: reset its Phrases List
+// for every new Stanza-> reset its Phrases List
+// reset Phrase id counter
 ~stanza_init.remove;
 ~stanza_init = SimpleController(~stanza.id).put(
 	\init, {|values, tag, args|
 		~stanza.phrases.value_(List.new);
+		~phrase.id.value_(0);
 	};
 );
 
@@ -70,11 +72,18 @@
 	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
 	recursion: Ref(true), // affects Pbindef players
 
-	fx:Ref([]),
+
 	all_srvrs: { Server.allRunningServers },
 	server: Ref(nil),
 	group_main: Ref(nil),
 	group_id: Ref(0),
+	fx_list: Ref(()),
+	fx_maker: { |id, server, group, fx_bus, fx_name|
+		Pdef((fx_name++'_'++id).asSymbol,
+			( type: \on, instrument: fx_name,
+				server: server, group: group,
+				addAction: 1, out: fx_bus)).play;
+	},
 	fx_bus: Ref(nil),
 	fx_bus_index: Ref(nil),
 	out: Ref(0)
@@ -104,8 +113,10 @@ Pdef.clear
 ~phrase_init.remove;
 ~phrase_init = SimpleController(~phrase.id).put(
 	\init, { |values, tag, args|
-		var id, all_srvrs, choose, selected, group, bus;
-		id = ~phrase.id.value;
+		var id_stanza, id_phrase, id, all_srvrs, choose, selected, group, bus;
+		id_stanza = ~stanza.id.value.asSymbol;
+		id_phrase = ~phrase.id.value.asSymbol;
+		id = id_stanza++'_'++id_phrase;
 
 		// select the most chilled Server :)
 		all_srvrs= ~phrase.all_srvrs.value.asArray;
