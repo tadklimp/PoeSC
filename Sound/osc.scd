@@ -13,7 +13,8 @@ OSCdef.freeAll;
 // and pass the number of included phrases
 OSCdef.new(
 	'/stanza/trigger',
-	{ |msg, time, recAddr, recPort|
+	{
+		|msg, time, recAddr, recPort|
 		~stanza.id.value_(~stanza.id.value+1).changed(\init);
 		~stanza.num_of_phrases.value_(msg[1]);
 	},
@@ -24,7 +25,8 @@ OSCdef.new(
 // Check Stanza's playback mode (Serial or Parallel)
 OSCdef.new(
 	'/stanza/mode',
-	{ |msg, time, recAddr, recPort|
+	{
+		|msg, time, recAddr, recPort|
 		case
 		{msg[1] == 'seq'} { ~stanza.mode.value_('seq') }
 		{msg[1] == 'par'} { ~stanza.mode.value_('par') };
@@ -34,86 +36,48 @@ OSCdef.new(
 ).fix;
 
 
+// receives amount of syllables in each word
+// that could effect fx parameters
+// e.g. every syll_length change x
 OSCdef.new(
 	'/syllab/length', // It expects Integers and Rests
-	{ |msg, time, recAddr, recPort|
+	{
+		|msg, time, recAddr, recPort|
 		var values = msg;
-		recAddr.postln;
+		~phrase.trig.value_(~phrase.trig.value+1).changed(\value);
 		~phrase.syll_length.value_(values[1..]).changed(\value);
-		~phrase.id.value_(~phrase.id.value+1).changed(\init);
 	},
 	'/syllab/length', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
 
-// 'PUU'.asString.do{|i| {case {i==$P}{"ya".postln}{i==$U}{"yuuu".postln}; }.fork}
 
-//
+// receives the syllable's stress, Primary, Secondary, or Unstressed.
+// it scales the pitch collection
 OSCdef.new(
 	'/syllab/stress', // Name in the global dictionary
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
-		var new_list = List.new;
-
-		// new_list.add(0); // init list
-		values[1..].do{ |i|
-			if (i.isKindOf(Symbol)){
-				if(i != 'Rest(0)') { i.asString.do{ |x|
-					// x.class.postln;
-					case
-					{x == $P}{ new_list.add(1.0)} // Primary stress
-					{x == $S}{ new_list.add(0)} // Secondary stress
-					{x == $U}{ new_list.add(0)} // Unstressed
-				}
-				}{
-					// new_list.add(Rest(0))
-					// new_list.add(0)
-				}
-			}
-		};
-
-		Pdefn(\syllab_stress, Pseq(new_list.asArray, 1));
-		("stresses are: "++ msg[1..]).postln;
-		// (Pdefn(\syllab_stress).source.storeArgs).postln;
-		new_list.postln;
+		~phrase.syll_stress.value_(values[1..]).changed(\value);
 	},
-	'/syllab/stress', // A path essentially detailing the name of the listening function
-	nil, // nil means to listen to all incoming IPs/ports
+	'/syllab/stress',
+	nil,
 ).fix;
 
 
+// it receives the syllable's weight: Light or Heavy
+// it scales duration
 OSCdef.new(
-	'/syllab/weight', // Name in the global dictionary
+	'/syllab/weight',
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
-		var new_list = List.new;
-
-		// new_list.add(0); // init list
-		values[1..].do{ |i|
-			if (i.isKindOf(Symbol)){
-				if(i != 'Rest(0)') { i.asString.do{ |x|
-					// x.class.postln;
-					case
-					{x == $H}{ new_list.add(2.0)}
-					{x == $L}{ new_list.add(1.0)}
-				}
-				}{
-					new_list.add(0)
-				}
-			}
-		};
-
-		Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
-		("weights are: "++ msg[1..]).postln;
-		new_list.postln;
-
-		// ("weights are: "++ msg[1..]).postln
+		~phrase.syll_weight.value_(values[1..]).changed(\value);
 	},
-	'/syllab/weight', // A path essentially detailing the name of the listening function
-	nil, // nil means to listen to all incoming IPs/ports
+	'/syllab/weight',
+	nil,
 ).fix;
 
 
@@ -153,7 +117,7 @@ OSCdef.new(
 
 
 
-
+// receives each line's adjectives
 OSCdef.new(
 	'/phrase/adj',
 	{
@@ -171,7 +135,6 @@ OSCdef.new(
 				~phrase.adjectives.value_(new_list.asArray).changed(\update);
 			}
 		};
-
 		// if there are no Adjectives return an empty Array
 		if (values[1..].size == 0){
 			~phrase.adjectives.value_([]).changed(\update);
@@ -194,9 +157,9 @@ OSCdef.freeAll;
 // TODO: Find a way to have multiple speeds inside of Pbind :(
 (
 Pbind(
-	\dur, 0.5,
+	\dur, 0.25 * Pdefn(\syllab_weight),
 	\degree, Pdefn(\syllab_stress)*7,
-	\amp, 0.5
+	\amp, 0.1
 	// \stretch, Pconst(21,Pdefn(\syllab_weight)).trace(prefix:'stretch: ')
 ).play
 );
@@ -209,7 +172,7 @@ Pbind(
 
 Pbindef(\try,
 	\talea_trigger, Pn(Pdefn(\syllab_stress),inf,\step1), // dummy placeholder for triggering Pgate of \speed
-	// this fixes the problem of having a Pn before the Pgate
+	// this solves the problem of necessarily having a Pn-trigger placed above the Pgate
 	// it should be the same Pdefn as the \dur Pdefn
 	\speed, Pgate(Pdefn(\syllab_length),1,\step1).trace, // talea multiplier for \dur
 	// \degree, Pn(Pshuf([1,3,5,7]),inf),

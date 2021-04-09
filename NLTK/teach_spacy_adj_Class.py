@@ -6,7 +6,7 @@
 
 import spacy
 from spacy.language import Language
-from spacy.symbols import ORTH
+# from spacy.symbols import ORTH
 from spacy_syllables import SpacySyllables
 from sklearn.linear_model import LogisticRegression
 import train_sets
@@ -65,6 +65,7 @@ class Nlp:
     def split_sentences(self):
         """Split incoming text into sentences"""
         sentences = [str(sent).strip() for sent in self.model(self.text).sents]
+        # set default playback mode to "seq"
         mode = "seq"
         # if sentence is empty, clear it 
         for i, sent in enumerate(sentences):

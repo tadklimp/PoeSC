@@ -13,28 +13,28 @@
 
 (
 // initialize new Stanza
-// for every new Stanza-> reset its Phrases List
-// reset Phrase id counter
+// for every new Stanza-> reset its Phrases_List
+// reset Phrase trig counter
 ~stanza_init.remove;
 ~stanza_init = SimpleController(~stanza.id).put(
 	\init, {|values, tag, args|
 		~stanza.phrases.value_(List.new);
-		~phrase.id.value_(0);
+		~phrase.trig.value_(0);
 	};
 );
 
 
-// make sure all phrases are loaded on the Servers before the playback starts
+// make sure all phrases are loaded on to the Servers before the playback starts
 // underlying Logic: receive the num_of_phrases and compare if the size of the
 // loaded-phrases-list is the same. If yes, then start playback.
-// every new phrase triggers this controller when ready.
+// every new phrase (~phrase_builder) triggers this controller when done.
 ~stanza_ready_to_play.remove;
 ~stanza_ready_to_play = SimpleController(~stanza.phrases).put(
 	\update, {|values, tag, args|
 		var phrases = ~stanza.phrases.value.asArray;
 		var num_phrases = ~stanza.num_of_phrases.value;
 		if (phrases.size == num_phrases){
-			// if ready trigger the \mode Controller
+			// if ready trigger the ~stanza_mode Controller
 			~stanza.mode.changed(\mode);
 		}
 	}
@@ -54,16 +54,19 @@
 
 );
 
-
+~phrase.id
+~phrase.num_words
+~phrase.adjectives
 
 (
 ~phrase= (
-	id: Ref(0),
+	trig: Ref(0),
+	id: Ref('symbol'),
 
 	syll_length: Ref([]),
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
-	num_words: 0,
+	num_words: {|self| self.syll_length.value.size },
 	adjectives: Ref([]),
 	nouns: Ref([]),
 
@@ -74,14 +77,13 @@
 	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
 	recursion: Ref(true), // affects Pbindef players
 
-
 	all_srvrs: { Server.allRunningServers },
 	server: Ref(nil),
 	group_main: Ref(nil),
 	group_id: Ref(0),
 
 	fx_list: Ref([]),
-	fx_maker: { // double function so it doesn't evaluate as soon as it is called !
+	fx_maker: { // it is a double function so it doesn't evaluate as soon as it is called !
 		{ |id, group, server, fx_bus, fx_name|
 			Pdef((fx_name++'_'++id).asSymbol,
 				( type: \on, instrument: fx_name,
@@ -100,39 +102,30 @@
 ~phrase.adjectives
 
 (
-// map adjectives to responding effects
-~map_adjs_to_fx.remove;
-~map_adjs_to_fx = SimpleController(~phrase.adjectives).put(
-	\update, { |values, tag, args|
-		var list = List.new;
-		("the values are: " ++ values).postln;
-		if (values.value.size > 0){
-			values.value.do{ |x|
-				case
-				{x == 'colour'}{ list.add(\verb) }
-				// {x == 'size'}{ list.add(\delay) }
-				{x == 'opinion'}{ list.add(\echo) }
-				/*{x == 'quantity'}{ list.add() }
-				{x == 'texture'}{ list.add() }
-				{x == 'age'}{ list.add() }
-				{x == 'weight'}{ list.add() }
-				{x == 'state'}{ list.add() }*/
-				;
-			};
-			~phrase.fx_list.value_(list);
-		}{
-			~phrase.fx_list.value_([]);
-		}
+
+// trigger controller
+// when triggered create the id name of the phrase and trigger the ~phrase_init
+~phrase_trig.remove;
+~phrase_trig = SimpleController(~phrase.trig).put(
+	\value, { |values, tag, args|
+		var id_stanza, trig, id;
+		id_stanza = ~stanza.id.value.asSymbol;
+		trig = values.value.asSymbol;
+		id = id_stanza++'_'++ trig;
+		~phrase.id.value_(id.asSymbol).changed(\init);
 	}
 );
 
+
+
+// id controller
+// initialise phrase
+// create Group, Busses etc.
 ~phrase_init.remove;
 ~phrase_init = SimpleController(~phrase.id).put(
 	\init, { |values, tag, args|
-		var id_stanza, id_phrase, id, all_srvrs, choose, selected, group, bus;
-		id_stanza = ~stanza.id.value.asSymbol;
-		id_phrase = ~phrase.id.value.asSymbol;
-		id = id_stanza++'_'++id_phrase;
+		var id, all_srvrs, choose, selected, group, bus;
+		id = ~phrase.id.value;
 
 		// select the most chilled Server :)
 		all_srvrs= ~phrase.all_srvrs.value.asArray;
@@ -168,8 +161,110 @@
 	}
 );
 
+// syll_length controller
+~length_ctrl.remove;
+~length_ctrl = SimpleController(~phrase.syll_length).put(
+	\value,{ |values, tag, args|
+		var new_list = List.new;
+		var id = ~phrase.id.value;
+		values.value.do{ |i|
+			if (i.isKindOf(Integer)){
+				new_list.add(i)
+			}{
+				new_list.add(Rest(1))
+			}
+		};
+		Pdefn((\syllab_length_++id).asSymbol,Pseq(new_list.asArray, 1));
+		("lenghts are: "++ values).postln;
+
+	}
+);
 
 
+// syll_stress controller
+// it creates a Pdefn that scales the pitch collection
+~stress_ctrl.remove;
+~stress_ctrl = SimpleController(~phrase.syll_stress).put(
+	\value,{ |values, tag, args|
+		var new_list = List.new;
+		var id = ~phrase.id.value;
+		values.value.do{ |i|
+			if (i.isKindOf(Symbol)){
+				if(i != 'Rest(0)') { i.asString.do{ |x|
+					// x.class.postln;
+					case
+					{x == $P}{ new_list.add(1.0)} // Primary stress
+					{x == $S}{ new_list.add(0)} // Secondary stress
+					{x == $U}{ new_list.add(0)} // Unstressed
+				}
+				}{
+					// new_list.add(Rest(0))
+					// new_list.add(0)
+				}
+			}
+		};
+		Pdefn((\syllab_stress_++id).asSymbol,Pseq(new_list.asArray, 1));
+		("stresses are: "++ values).postln;
+	}
+);
+
+
+// syll_weight controller
+// it creates a Pdefn that scales duration
+~weight_ctrl.remove;
+~weight_ctrl = SimpleController(~phrase.syll_weight).put(
+	\value,{ |values, tag, args|
+		var new_list = List.new;
+		var id = ~phrase.id.value;
+
+		// new_list.add(0); // init list
+		values.value.do{ |i|
+			if (i.isKindOf(Symbol)){
+				if(i != 'Rest(0)') { i.asString.do{ |x|
+					// x.class.postln;
+					case
+					{x == $H}{ new_list.add(2.0)} // heavy
+					{x == $L}{ new_list.add(1.0)} // light
+				}
+				}{
+					new_list.add(0)
+				}
+			}
+		};
+		Pdefn((\syllab_weight_++id).asSymbol, Pseq(new_list.asArray, inf));
+		("weights are: "++ values).postln;
+	}
+);
+
+
+// are there any adjectives? if yes: map them to corresponding effects
+~map_adjs_to_fx.remove;
+~map_adjs_to_fx = SimpleController(~phrase.adjectives).put(
+	\update, { |values, tag, args|
+		var list = List.new;
+		("adjectives are: " ++ values).postln;
+		if (values.value.size > 0){
+			values.value.do{ |x|
+				case
+				{x == 'colour'}{ list.add(\verb) }
+				// {x == 'size'}{ list.add(\delay) }
+				{x == 'opinion'}{ list.add(\echo) }
+				/*{x == 'quantity'}{ list.add() }
+				{x == 'texture'}{ list.add() }
+				{x == 'age'}{ list.add() }
+				{x == 'weight'}{ list.add() }*/
+				{x == 'state'}{ list.add(\FreeVerb2x2) }
+				;
+			};
+			~phrase.fx_list.value_(list);
+		}{
+			~phrase.fx_list.value_([]);
+		}
+	}
+);
+
+// initialize phrase FX
+// receives trigger from ~phrase_init
 ~fx_init.remove;
 ~fx_init = SimpleController(~phrase.fx_builder).put(
 	\init, { |values, tag, args|
@@ -184,17 +279,19 @@
 				~phrase.fx_maker.(id, group, server, fx_bus, fx_name)
 			}
 		};
-		// always instantiate a monitoring fx as the last element in chain
+		// always instantiate a monitoring fx as the last element in a chain
 		Pdef((\fxMonitor_++id).asSymbol,
 			( type: \on, instrument: \monitor,
 				server: server, group: group,
 				addAction: 1, in: fx_bus, out:0)).play;
 
+		// when all is done, trigger the phrase_builder
 		~phrase.main_builder.changed(\init,[id, group, server, fx_bus]);
 	}
 );
 
-
+// build the whole phrase
+// receives trigger from ~fx_init
 ~phrase_builder.remove;
 ~phrase_builder = SimpleController(~phrase.main_builder).put(
 	\init, { |values, tag, args|
@@ -202,6 +299,7 @@
 		var group = args[1];
 		var server = args[2];
 		var fx_bus = args[3];
+
 
 		~stanza.phrases.value.add(
 			PbdefClean(
@@ -212,10 +310,14 @@
 						(time+1).wait;
 						fx_bus.free;
 						group.free;
+						// clear phrase Pdefs
 						Pdef.all.keys.do{ |key,i|
 							if (key.asString.contains(id.asString)) { Pdef(key).remove}
 						};
-						// "cleared".postln;
+						// clear phrase Pdefns
+						Pdefn.all.keys.do{ |key,i|
+							if (key.asString.contains(id.asString)) { Pdefn(key).remove}
+						};
 					}
 				},
 				// name
@@ -224,9 +326,10 @@
 				\server, server,
 				\group, group,
 				\addAction, 0,
-				\dur, 1,
-				\degree, Pshuf([0,2,4,5]+[2,5,-2,7].choose,2),
-				\amp, 0.01,
+				\dur, 0.25* Pdefn((\syllab_weight_++id).asSymbol),
+				// \degree, Pshuf([1,3,5,2,6],2)*2,
+				\degree, Pseq([2,3,6],inf)+Pdefn((\syllab_stress_++id).asSymbol)*Pshuf([1,2],inf),
+				\amp, 0.05,
 				\pan, Pwhite(-1,1),
 				\scale, Pfunc{topEnvironment[\stanza].scale},
 				\out, fx_bus.index
@@ -255,8 +358,14 @@ Pseq(~stanza.phrases.value.asArray).play(quant:1)
 ~phrase.id.value_(~phrase.id.value+1).changed(\init);
 ~phrase.id.value_(~phrase.id.value+1).changed(\init);
 ~phrase.id.value
-Pdef.clear
+Pdef.clear;
+Pdefn.clear;
+Pdef.gui;
+Pdefn.all.keys;
 
+Pdefn(\syllab_stress_17_1).asCode
+
+Pdefn.all.keys.do{ |key,i| if (key.asString.contains("7_2")) { Pdefn(key).remove}};
 
 Pdef.modulateAll(\mtranspose, Pstep(Pseq([5,2,-2],inf),8), \scale, Scale.major.tuning_(Tuning.werckmeister))
 Pdef.modulateAll(\mtranspose, 0, \scale, Scale.major.tuning_(Tuning.werckmeister))
@@ -291,64 +400,11 @@ Pbindef(\bufy).stop
 Pbindef(\bufy).release(4)
 Pbindef(\bufy, \gtranspose, Pseq([1,4,1,2,4,7,4,3,12]*10.neg,inf))
 
-Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \mtranspose, 0) }}
-Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \scale, Scale.phrygian) }}
-Pdef.all.keysValuesDo{|key,val| if(val.isKindOf(PbdefClean) or: {val.isKindOf(Pbindef)}){ Pbindef(key, \scale, Scale.lydian) }}
-Pdef.all.keysValuesDo{|key,val| [key.class, val.class].postln ++ \n  }
-Pdef.all.do{|x| x.stop};
-Pdef.all.do{|x| x.pause};
-Pdef.all.do{\mtranspose, 2};
 
-Pdef(\player3)
-.player.isPlaying
 
-Pdef.all.values[0].pattern
-Pdef.all.values[3].pattern.type_(\off)
-Pdef.all.values[3].pattern.release
-Pdef.all.values[1].set(\type, \off)
 
-Pdef.all.values[1].isPlaying
-~kl = Pdef.all
-~kl.scanFor(\player9)
-~kl.at(Pdef(\player9))
-[\player8]
-~ohh = (\player++~phrase.id.value).asSymbol
-Pdef.all[~ohh].pause
-Pdef.all[~ohh].resume
-Pdef.all[~ohh].stop
-Pdef.all[~ohh].isPaused.not
-Pdef.all[~ohh].isActive
-Pdef.all[~ohh].hasEnded
-Pdef.all[~ohh].is
-Pdef.all['bufy']
-Pdef.all
-Pdef.clear
-Pdef.gui
-Pdef.browse
-Pdef(\fxMonitor_14).keys
-Pdef("fxMonitor_4")
 
-[\fxMonitor_4,\fxMonitor_10,\fxMonitor_11,\fxMonitor_15,\fxMonitor_12].collect{|x,i| [x,i].postln; if(x.asString.contains("11")){i.postln}}
-collect
 
-Pfset ??????????
-Pspawner
-
-Pbindef(\t1, \server, s, \degree, Pshuf((1..7),inf), \dur, 0.5, \amp, 0.01).play(quant:1);
-Pdef.modulateAll(\mtranspose, Pstep(Pseq([2,4,-2,1,0],inf),8*2), \scale, Scale.major )
-
-u=( type: \on, instrument: \monitor,
-	server: ~phrase.server.value, group: ~phrase.group_main.value,
-	addAction: 1, in: ~phrase.fx_bus_index.value).play.collect({|event| ~mon = event; });
-
-~mon.class
-u.free
-
-z = '2'
-y = '21'
-
-z++'_'++y
-~lastBassEvent.class
 
 (
 ~length_ctrl.remove;

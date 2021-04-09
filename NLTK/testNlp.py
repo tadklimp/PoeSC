@@ -35,7 +35,7 @@ def callback():
     # delay needed in sclang in order to choose available Server
         sleep(0.2) 
         o = Osc_send()
-        o.attach_labels(i)
+        o.prosodic_labels(i)
         o.add_adjectives(Nlp.get_adjectives(i))
         o.meter_to_sclang()
         print(i)

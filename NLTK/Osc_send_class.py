@@ -36,7 +36,7 @@ class Osc_send:
         print("Osc connection established")
 
 
-    def attach_labels(self, text):
+    def prosodic_labels(self, text):
         ''' prosodic analysis func :
         extract [syllable_length, syllable_stress, syllable_weight] and
         add them to the OSC_messages '''
@@ -54,13 +54,13 @@ class Osc_send:
         for val in values:
             self.phrase_adjectives.add(val)
 
-    def insert_break():
+    def insert_break(self):
         ''' a simple way to define a sentence-end:
         insert the "Rest(0)" string at the end of each sentence (in the OSC_message) '''
         identifier = "Rest(0)"
-        osc_sylab_length.add(identifier )
-        osc_sylab_stress.add(identifier )
-        osc_sylab_weight.add(identifier )
+        self.syllab_length.add(identifier )
+        self.syllab_stress.add(identifier )
+        self.syllab_weight.add(identifier )
 
 
     # put it all together and send to Supercollider-sclang
@@ -69,9 +69,9 @@ class Osc_send:
 
     @staticmethod
     def new_stanza_trigger(size):
-        ''' for each new Stanza send an OSC trigger msg and pass the num of phrases '''
+        ''' for each new Stanza send an OSC trigger msg and pass the num of lines '''
         liblo.send(Osc_send.target,"/stanza/trigger",size)
-        print("you have ", size, " phrases")
+        print("there are ", size, " lines")
 
     @staticmethod
     def playback_mode(mode):
