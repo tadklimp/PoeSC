@@ -23,7 +23,7 @@ def callback():
     txt = Nlp(e.get("1.0", tk.END))
     txt.get_adjectives("// ")
     splits = txt.split_sentences()
-    # trigger new Stanza and pass num of phrases
+    # trigger new Stanza and pass num of lines
     Osc_send.new_stanza_trigger(len(splits[1]))
     # check if playback mode is seq or par
     if splits[0] == "par":
@@ -38,7 +38,7 @@ def callback():
         o.prosodic_labels(i)
         o.add_adjectives(Nlp.get_adjectives(i))
         o.meter_to_sclang()
-        print(i)
+        # print(i)
 
 
 b = tk.Button(window, text = "OK", width = 10, command = callback)

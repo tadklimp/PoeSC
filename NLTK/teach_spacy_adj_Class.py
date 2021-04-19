@@ -71,7 +71,7 @@ class Nlp:
         for i, sent in enumerate(sentences):
             if len(sent) == 0:
                 del sentences[i]
-        # if Stanza starts with '//' it denotes parallel playback of sentences/phrases
+        # if Stanza starts with '//' it denotes parallel playback of lines/phrases
         if sentences[0][0] == "/" and sentences[0][1] == "/": 
             mode = "par"
             del sentences[0]
@@ -98,7 +98,7 @@ class Nlp:
                 # collection.append(token)
                 collection.append(Nlp.adj_classes[Nlp.adj_classifier.predict([token.vector])[0]])
                 # collection.append(separator)
-        print(collection)
+        # print(collection)
         # print(self.model, self.text)
         return collection
 

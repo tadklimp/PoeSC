@@ -9,9 +9,9 @@
 	steps_octave: Ref(12),
 	phrases: Ref(List.new)
 );
-);
 
-(
+
+
 // initialize new Stanza
 // for every new Stanza-> reset its 'phrases' key
 // reset Phrase's 'trig' key
@@ -56,7 +56,7 @@
 
 ~phrase.id
 ~phrase.num_words
-~phrase.adjectives
+
 
 (
 ~phrase= (
@@ -67,7 +67,8 @@
 	syll_length: Ref([]),
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
-	num_words: {|self| self.syll_length.value.size },
+	// num_words: {|self| self.syll_length.value.size },
+	num_words: {|self| var num = self.syll_length.value.reject{|x| x==0}; num.size },//reject punctuation
 	punctuation: Ref([]),
 	adjectives: Ref([]),
 	nouns: Ref([]),
@@ -99,11 +100,11 @@
 	main_builder: Ref(nil),
 	out: Ref(0)
 );
-);
 
-~phrase.adjectives
 
-(
+
+
+
 
 // trigger controller
 // when triggered create the id name of the phrase and trigger the ~phrase_init
@@ -201,7 +202,7 @@
 				}
 				}{
 					// new_list.add(Rest(0))
-					// new_list.add(0)
+					new_list.add(0)
 				}
 			}
 		};
@@ -212,29 +213,40 @@
 
 
 // punctuation controller
-// it creates a Pdefn that is added to duration, thus producing
+// different punctuations are transformed into \dur stretch values
+// it creates (a) one Pdefn that controlls a Pstretch
+// and (b) one Pdefn that sets the \amp to 0 whenever there is a punctuation, thus creating a Rest.
 ~punct_ctrl.remove;
 ~punct_ctrl = SimpleController(~phrase.punctuation).put(
 	\value,{ |values, tag, args|
 		var new_list = List.new;
 		var id = ~phrase.id.value;
-
+		var amp_transform;
+		// transform punctuation to /dur multiplier
 		values.value.do{ |i|
 			if (i.isKindOf(Symbol)){
-				if(i != 'Rest(0)') { i.asString.do{ |x|
-
-					case
-					{x == $H}{ new_list.add(2.0)} // heavy
-					{x == $L}{ new_list.add(1.0)} // light
-				}
-				}{
-					new_list.add(0)
+				if(i != 'None') {
+					i.do{ |x|
+						case
+						{x == ','}{ new_list.add(1.5)}
+						{x == '.'}{ new_list.add(2.0)}
+						{x == ';'}{ new_list.add(2.5)}
+						{x == '!'}{ new_list.add(3)}
+						{x == '?'}{ new_list.add(4)}
+				}}
+				{
+					new_list.add(1) // if no punctuation then multiply with 1
 				}
 			}
 		};
-
-		// ("punctuation is:"++values).postln;
-		//Pdefn((\syllab_weight_++id).asSymbol, Pseq(new_list.asArray, inf));
+		("the puncs are"++new_list.asArray).postln;
+		// transform the /dur list into /amp list
+		// if any value is > 1 => set the amp to 0, i.e. Rest
+		amp_transform = new_list.asArray.collect{|x| if (x>1){x=0}{x=1}};
+		//create the stretch Pdefn
+		Pdefn((\punct_stretch++id).asSymbol, Pseq(new_list.asArray, inf));
+		// create the "rest" Pdefn
+		Pdefn((\punct_rest++id).asSymbol, Pseq(amp_transform, inf))
 
 	}
 );
@@ -247,7 +259,6 @@
 		var new_list = List.new;
 		var id = ~phrase.id.value;
 
-		// new_list.add(0); // init list
 		values.value.do{ |i|
 			if (i.isKindOf(Symbol)){
 				if(i != 'Rest(0)') { i.asString.do{ |x|
@@ -257,7 +268,7 @@
 					{x == $L}{ new_list.add(1.0)} // light
 				}
 				}{
-					new_list.add(0)
+					new_list.add(1)
 				}
 			}
 		};
@@ -336,41 +347,45 @@
 		var tempo_grid = ~phrase.tempo_grid.value;
 
 		// add phrase to the Stanza's 'phrases' list
+		// surround everything in a Pstretch so that punctuation can "stretch" silences accordingly
+		// use the custom class PbdefClean which is a Pbindef with a cleanup function
 		~stanza.phrases.value.add(
-			// custom Pbindef that includes cleanup function when done
-			PbdefClean(
-				//cleanup function:
-				{ var time=3;
-					fork{
-						group.release(time);
-						(time+1).wait;
-						fx_bus.free;
-						group.free;
-						// clear phrase Pdefs
-						Pdef.all.keys.do{ |key,i|
-							if (key.asString.contains(id.asString)) { Pdef(key).remove}
-						};
-						// clear phrase Pdefns
-						Pdefn.all.keys.do{ |key,i|
-							if (key.asString.contains(id.asString)) { Pdefn(key).remove}
-						};
-					}
-				},
-				// name
-				(\player_++id).asSymbol,
-				// Pbind
-				\server, server,
-				\group, group,
-				\addAction, 0, // place at head of group
-				\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
-				// \degree, Pshuf([1,3,5,2,6],2)*2,
-				\degree, Pdefn((\syllab_stress_++id).asSymbol),
-				\amp, 0.05,
-				\pan, Pwhite(-1,1),
-				\scale, Pfunc{topEnvironment[\stanza].scale},
-				\out, fx_bus.index
-
-		));
+			Pstretch(
+				Pdefn((\punct_stretch++id).asSymbol),
+				PbdefClean(
+					//cleanup function:
+					{ var time=3;
+						fork{
+							group.release(time);
+							(time+1).wait;
+							fx_bus.free;
+							group.free;
+							// clear phrase Pdefs
+							Pdef.all.keys.do{ |key,i|
+								if (key.asString.contains(id.asString)) { Pdef(key).remove}
+							};
+							// clear phrase Pdefns
+							Pdefn.all.keys.do{ |key,i|
+								if (key.asString.contains(id.asString)) { Pdefn(key).remove}
+							};
+						}
+					},
+					// name
+					(\player_++id).asSymbol,
+					// Pbind
+					\server, server,
+					\group, group,
+					\addAction, 0, // place at head of group
+					\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
+					// \degree, Pshuf([1,3,5,2,6],2)*2,
+					\degree, Pdefn((\syllab_stress_++id).asSymbol),
+					\amp, 0.05 * Pdefn((\punct_rest++id).asSymbol),
+					\pan, Pwhite(-1,1),
+					\scale, Pfunc{topEnvironment[\stanza].scale},
+					\out, fx_bus.index
+				)
+			)
+		);
 		~stanza.phrases.changed(\update);
 	}
 );
@@ -379,11 +394,11 @@
 
 
 p = Pspawn(Pbind(
-        // Pbind returned by Pfunc is not embedded, just placed in the event
-        // So, it can be spawned
-    \pattern, Pfunc { Pbind(\degree, Pseq((0..3),1), \dur, 0.125) },
-    \delta, Pseq([0.25,0.25,0.25,0.25,Rest(1)],inf),
-    \method, \par
+	// Pbind returned by Pfunc is not embedded, just placed in the event
+	// So, it can be spawned
+	\pattern, Pfunc { Pbind(\degree, Pseq((0..3),1), \dur, 0.125) },
+	\delta, Pseq([0.25,0.25,0.25,0.25,Rest(1)],inf),
+	\method, \par
 )).play;
 
 

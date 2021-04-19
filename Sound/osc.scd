@@ -115,6 +115,19 @@ OSCdef.new(
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
+// receives each line's punctuation
+OSCdef.new(
+	'/phrase/punct',
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+			~phrase.punctuation.value_(values[1..]).changed(\value);
+
+	},
+	'/phrase/punct',
+	nil,
+).fix;
+
 
 
 // receives each line's adjectives
