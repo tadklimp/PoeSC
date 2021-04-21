@@ -356,29 +356,31 @@
 		// use the custom class PbdefClean which is a Pbindef with a cleanup function
 
 		~stanza.phrases.value.add(
+			Pfset({
+				~buf=	Buffer.readChannel(server,"/Volumes/Archive1/Sample Libraries/SuperCollider Recordings/SC-2020_Dec/Ircam/ircam_beat-28(FFT-singleLow).wav" , channels:0);
+			},
 			Pstretch(
 				Pdefn((\punct_stretch++id).asSymbol),
-				PbdefClean(
-					//cleanup function:
-					{ var time=3;
-						fork{
-							group.release(time);
-							(time+1).wait;
-							fx_bus.free;
-							group.free;
-							// clear phrase Pdefs
-							Pdef.all.keys.do{ |key,i|
-								if (key.asString.contains(id.asString)) { Pdef(key).remove}
-							};
-							// clear phrase Pdefns
-							Pdefn.all.keys.do{ |key,i|
-								if (key.asString.contains(id.asString)) { Pdefn(key).remove}
-							};
-						}
-					},
-					// name
+				/*					Pbindef(
+				// name
+				(\player_++id).asSymbol,
+				// PbindProxy
+				\server, server,
+				\group, group,
+				\addAction, 0, // place at head of group
+				\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
+				// \degree, Pshuf([1,3,5,2,6],2)*2,
+				\degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
+				\octave, Pgate(Pfunc{[4,5,6,7].choose}),
+				\amp, 0.05 * Pdefn((\punct_rest++id).asSymbol),
+				\pan, Pwhite(-1,1),
+				\scale, Pfunc{topEnvironment[\stanza].scale},
+				\out, fx_bus.index
+				)*/
+				Pbindef(
 					(\player_++id).asSymbol,
-					// PbindProxy
+					\instrument, \trig_buf,
+					\bufnum, Pfunc{|ev| ev.buf.normalize.bufnum},
 					\server, server,
 					\group, group,
 					\addAction, 0, // place at head of group
@@ -386,13 +388,33 @@
 					// \degree, Pshuf([1,3,5,2,6],2)*2,
 					\degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
 					\octave, Pgate(Pfunc{[4,5,6,7].choose}),
-					\amp, 0.05 * Pdefn((\punct_rest++id).asSymbol),
+					\amp, 0.5 * Pdefn((\punct_rest++id).asSymbol),
 					\pan, Pwhite(-1,1),
 					\scale, Pfunc{topEnvironment[\stanza].scale},
 					\out, fx_bus.index
 				)
 			)
+			,		//cleanup function:
+			{ var time=3;
+				fork{
+					group.release(time);
+					(time+1).wait;
+					fx_bus.free;
+					group.free;
+					~buf.free;
+					// clear phrase Pdefs
+					Pdef.all.keys.do{ |key,i|
+						if (key.asString.contains(id.asString)) { Pdef(key).remove}
+					};
+					// clear phrase Pdefns
+					Pdefn.all.keys.do{ |key,i|
+						if (key.asString.contains(id.asString)) { Pdefn(key).remove}
+					};
+				}
+			}
+			)
 		);
+
 		~stanza.phrases.changed(\update);
 	}
 );
@@ -400,13 +422,6 @@
 );
 
 
-p = Pspawn(Pbind(
-	// Pbind returned by Pfunc is not embedded, just placed in the event
-	// So, it can be spawned
-	\pattern, Pfunc { Pbind(\degree, Pseq((0..3),1), \dur, 0.125) },
-	\delta, Pseq([0.25,0.25,0.25,0.25,Rest(1)],inf),
-	\method, \par
-)).play;
 
 
 
@@ -440,90 +455,3 @@ Pdef.modulateAll(\detune, PLFTri(4,0,200,0))
 Pdef.modulateAll(\detune, 0)
 Pdef.modulateAll(\amp, 0.001)
 
-(50-60).midiratio
-(
-SynthDef(\help_PlayBuf, {| out = 0, bufnum = 0, freq=1, pos=0 , gate=1, amp=0.1 |
-	var env = Linen.kr(gate, 0.0005, amp, 0.7, 2);
-	OffsetOut.ar(out,
-		PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum)*(freq.cpsmidi-60).midiratio, startPos:pos, loop: 1.0)!2 * env
-	)
-}).add;
-)
-b.free
-b = Buffer.readChannel(s,"/Users/Makis/Documents/Tidal/Dirt/samples/brane2/13.wav",channels:0);
-b.numFrames
-(Pbindef(\bufy,
-	\instrument, \help_PlayBuf,
-	\bufnum, b.bufnum,
-	\degree, Pseq([0,1,2],inf),
-	\pos, Pwhite(0.0,b.numFrames*0.25,inf),
-	\dur, 0.02,
-	\amp,0.1
-))
-Pbindef(\bufy).play
-Pbindef(\bufy).stop
-Pbindef(\bufy).release(4)
-Pbindef(\bufy, \gtranspose, Pseq([1,4,1,2,4,7,4,3,12]*10.neg,inf))
-
-
-
-
-
-
-
-(
-~length_ctrl.remove;
-~length_ctrl=SimpleController(~phrase.syll_length).put(
-	\value, {|values, tag, args|
-		// Here I work around the problem that ".condition_" imposes
-		// on the included Pdefns. quickFix= every time place the incoming
-		// list into a new List, so that the new Pdefn can register correctly
-		// the List.size and use it as "wait" argument in its conditional execution.
-		var newList = List.new;
-		var local_env = ();
-		var pos = ("pos"++~phrase.id.value).asSymbol; // create a new name every time
-
-		if(~phrase.stack.value==true){// check if phrases are played throughout before new phrase begins
-			// i.e. sequenced/stacked playback
-			values.value.do{ |i|
-				if (i.isKindOf(Integer)){
-					newList.add(i)
-				}{
-					newList.add(Rest(1))
-			}};
-			local_env.put(pos, newList);// store the new list in a new local env
-			local_env.postln;
-			("lenghts are: "++ values.value).postln;
-			Pdefn(\sylab_length, Pseq(local_env[pos].asArray, 1)).condition_({ |val,i|
-				var size = local_env[pos].size;
-				("New Pattern starts in ..."++ (size- i)).postln;
-				i.postln%size==0;
-			});
-		}{ // or, switch to new Pdefn immediately
-			values.value.do{ |i|
-				if (i.isKindOf(Integer)){
-					newList.add(i)
-				}{
-					newList.add(Rest(1))
-			}};
-			local_env.put(pos, newList);
-			local_env.postln;
-			("lenghts are: "++ values.value).postln;
-			Pdefn(\sylab_length, Pseq(local_env[pos].asArray, 1)).reset// no conditional trigger here!
-		};
-	}
-);
-
-);
-
-~length_ctrl.put(\fafa, {|a,b,c| "haha".postln})
-
-
-currentEnvironment.keys
-
-~phrase.syll_length.value_([1,2,5,3,4]).changed(\value)
-~phrase.id
-~checker= List.new;
-~checker[2].value.class
-
-~phrase

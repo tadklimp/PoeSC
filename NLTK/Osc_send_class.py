@@ -52,7 +52,6 @@ class Osc_send:
                 for syl in word.syllables():
                     self.punctuation.add('None')
                     self.syllab_text.add(syl.token)
-                # alltogether.append(s.token)
                 self.syllab_length.add(len(word.syllables()))
                 self.syllab_stress.add(w.stress)
                 self.syllab_weight.add(w.weight)
