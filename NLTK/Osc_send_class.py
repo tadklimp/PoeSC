@@ -3,6 +3,7 @@ import prosodic
 import spacy
 import liblo, sys
 from split_sent import split_into_sentences
+from train_sets import calculate_score
 
 
 
@@ -13,6 +14,7 @@ class Osc_send:
     syllab_stress = None
     syllab_weight = None
     syllab_text = None
+    syllab_score = None
     punctuation = None
     phrase_adjectives = None
 
@@ -22,6 +24,7 @@ class Osc_send:
         self.syllab_stress = liblo.Message("/syllab/stress")
         self.syllab_weight = liblo.Message("/syllab/weight")
         self.syllab_text = liblo.Message("/syllab/text")
+        self.syllab_score = liblo.Message("/syllab/score")
         self.punctuation = liblo.Message("/phrase/punct") 
         self.phrase_adjectives = liblo.Message("/phrase/adj")
 
@@ -52,6 +55,7 @@ class Osc_send:
                 for syl in word.syllables():
                     self.punctuation.add('None')
                     self.syllab_text.add(syl.token)
+                    self.syllab_score.add( calculate_score(syl.token))
                 self.syllab_length.add(len(word.syllables()))
                 self.syllab_stress.add(w.stress)
                 self.syllab_weight.add(w.weight)
@@ -90,11 +94,13 @@ class Osc_send:
         self.syllab_length.add(identifier )
         self.syllab_stress.add(identifier )
         self.syllab_weight.add(identifier )
+        self.syllab_score.add(identifier )
+
 
 
     # put it all together and send to Supercollider-sclang
     def meter_to_sclang(self):
-        liblo.send(self.target,liblo.Bundle( self.syllab_length, self.syllab_stress, self.syllab_weight, self.punctuation, self.syllab_text, self.phrase_adjectives )) 
+        liblo.send(self.target,liblo.Bundle( self.syllab_length, self.syllab_stress, self.syllab_weight, self.punctuation, self.syllab_text, self.syllab_score, self.phrase_adjectives )) 
 
     @staticmethod
     def new_stanza_trigger(size):

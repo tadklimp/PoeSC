@@ -80,11 +80,27 @@ OSCdef.new(
 	nil,
 ).fix;
 
+// receives syllable's score, defined as the sum of each letter's value.
+// defines the final pitch of this syllable, modulo ~phrase.steps_per_octave
+OSCdef.new(
+	'/syllab/score',
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+		var new_list = List.new;
 
+		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
+		~phrase.syll_score.value_(values[1..]).changed(\value);
+		("score is "++values[1..]).postln;
+
+	},
+	'/syllab/score',
+	nil,
+).fix;
 
 
 OSCdef.new(
-	'/syllab/text', // Name in the global dictionary
+	'/syllab/text',
 	{
 		|msg, time, recAddr, recPort|
 		var values = msg;
@@ -114,6 +130,8 @@ OSCdef.new(
 	'/syllab/text', // A path essentially detailing the name of the listening function
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
+
+
 
 // receives each line's punctuation
 OSCdef.new(

@@ -5,8 +5,8 @@
 	id: Ref(0),
 	mode: Ref('seq'),
 	num_of_phrases: Ref(0),
-	scale: Scale.major,
-	steps_octave: Ref(12),
+	scale: Ref( Scale.major ),
+	steps_octave: {|self| self.scale.value.pitchesPerOctave },
 	phrases: Ref(List.new)
 );
 
@@ -56,6 +56,9 @@
 
 ~phrase.syll_length
 ~phrase.num_words
+~phrase.steps_octave
+~phrase.scale.value.degrees
+~phrase.scale.value[32]
 
 
 (
@@ -67,14 +70,15 @@
 	syll_length: Ref([]),
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
+	syll_score: Ref([]),
 	num_words: {|self| var num = self.syll_length.value.reject{|x| x=='Rest(0)'}; num.size },//reject punctuation & calculate num words
 	punctuation: Ref([]),
 	adjectives: Ref([]),
 	nouns: Ref([]),
 
 	instr: Ref([]),
-	pitch_material: Ref([]),
-	pitch_offset: Ref(0),
+	pitch_collection: Ref([]),
+	pitch_root: Ref(0),
 
 	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
 	recursion: Ref(true), // affects Pbindef players
@@ -121,7 +125,7 @@
 
 
 
-// id controller
+// init controller
 // initialise phrase
 // create Group, Busses etc.
 ~phrase_init.remove;
@@ -176,7 +180,7 @@
 			if (i.isKindOf(Integer)){
 				new_list.add(i)
 			}{
-				new_list.add(Rest(1))
+				new_list.add(Rest(0))
 			}
 		};
 		Pdefn((\syllab_length_++id).asSymbol, Pn(Pseq(new_list.asArray, 1),repeats));
@@ -199,7 +203,7 @@
 				if(i != 'Rest(0)') { i.asString.do{ |x|
 					// x.class.postln;
 					case
-					{x == $P}{ new_list.add(1.0)} // Primary stress
+					{x == $P}{ new_list.add(0)} // Primary stress
 					{x == $S}{ new_list.add(0)} // Secondary stress
 					{x == $U}{ new_list.add(0)} // Unstressed
 				}
@@ -213,6 +217,56 @@
 		("stresses are: "++ values).postln;
 	}
 );
+
+// syll_weight controller
+// it creates a Pdefn that scales duration
+~weight_ctrl.remove;
+~weight_ctrl = SimpleController(~phrase.syll_weight).put(
+	\value,{ |values, tag, args|
+		var new_list = List.new;
+		var id = ~phrase.id.value;
+		var repeats = ~phrase.repeats.value;
+
+		values.value.do{ |i|
+			if (i.isKindOf(Symbol)){
+				if(i != 'Rest(0)') { i.asString.do{ |x|
+					// x.class.postln;
+					case
+					{x == $H}{ new_list.add(2)} // heavy
+					{x == $L}{ new_list.add(1.0)} // light
+				}
+				}{
+					new_list.add(1)
+				}
+			}
+		};
+		Pdefn((\syllab_weight_++id).asSymbol, Pn(Pseq(new_list.asArray, 1),repeats));
+		("weights are: "++ values).postln;
+	}
+);
+
+
+~syll_score_ctrl.remove;
+~syll_score_ctrl = SimpleController(~phrase.syll_score).put(
+	\value,{ |values, tag, args|
+		var new_list = List.new;
+		var id = ~phrase.id.value;
+		var repeats = ~phrase.repeats.value;
+		var scale = ~stanza.scale.value;
+
+		values.value.do{ |i|
+			if (i != 'Rest(0)')
+			{ new_list.add( i % ~stanza.steps_octave) }
+			{ new_list.add( Rest(0)) }
+		};
+		~phrase.pitch_collection.value_(new_list);
+
+		Pdefn((\pitch_collection_++id).asSymbol, Pn(Pseq(new_list.asArray, 1),repeats));
+		("pitches are: "++ new_list).postln;
+	}
+);
+
+
 
 
 // punctuation controller
@@ -254,37 +308,6 @@
 
 	}
 );
-
-// syll_weight controller
-// it creates a Pdefn that scales duration
-~weight_ctrl.remove;
-~weight_ctrl = SimpleController(~phrase.syll_weight).put(
-	\value,{ |values, tag, args|
-		var new_list = List.new;
-		var id = ~phrase.id.value;
-		var repeats = ~phrase.repeats.value;
-
-		values.value.do{ |i|
-			if (i.isKindOf(Symbol)){
-				if(i != 'Rest(0)') { i.asString.do{ |x|
-					// x.class.postln;
-					case
-					{x == $H}{ new_list.add(2)} // heavy
-					{x == $L}{ new_list.add(1.0)} // light
-				}
-				}{
-					new_list.add(1)
-				}
-			}
-		};
-		Pdefn((\syllab_weight_++id).asSymbol, Pn(Pseq(new_list.asArray, 1),repeats));
-		("weights are: "++ values).postln;
-	}
-);
-
-
-
-
 
 // are there any adjectives? if yes: map them to corresponding effects
 ~map_adjs_to_fx.remove;
@@ -386,11 +409,13 @@
 					\addAction, 0, // place at head of group
 					\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
 					// \degree, Pshuf([1,3,5,2,6],2)*2,
-					\degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
-					\octave, Pgate(Pfunc{[4,5,6,7].choose}),
+					// \degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
+					\degree, Pdefn((\pitch_collection_++id).asSymbol).trace,
+					// \detune, Pdefn((\syllab_stress_++id).asSymbol),
+					// \octave, Pgate(Pfunc{[4,5,6,7].choose}),
 					\amp, (0.25 * Pdefn((\punct_rest++id).asSymbol))*0.5,
 					\pan, Pwhite(-1,1),
-					\scale, Pfunc{topEnvironment[\stanza].scale},
+					\scale, Pfunc{topEnvironment[\stanza].scale.value},
 					\out, fx_bus.index
 				)
 			)
