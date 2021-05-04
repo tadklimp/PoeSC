@@ -63,7 +63,9 @@ class Nlp:
 
 
     def split_sentences(self):
-        """Split incoming text into sentences"""
+        """ Split incoming text into sentences.
+        Returns a list of [mode, sentences] 
+        """
         sentences = [str(sent).strip() for sent in self.model(self.text).sents]
         # set default playback mode to "seq"
         mode = "seq"

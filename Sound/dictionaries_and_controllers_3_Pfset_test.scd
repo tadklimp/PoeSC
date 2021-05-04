@@ -13,7 +13,7 @@
 
 
 // initialize new Stanza
-// for every new Stanza-> reset its 'phrases' key
+// for every new Stanza-> reset its 'phrases' key and
 // reset Phrase's 'trig' key
 ~stanza_init.remove;
 ~stanza_init = SimpleController(~stanza.id).put(
@@ -25,9 +25,9 @@
 
 
 // make sure all phrases are loaded on to the Servers before the playback starts
-// underlying Logic: check the num_of_phrases and compare if the size of the
-// loaded-phrases-list ('phrases') is the same. If yes, then start playback.
-// every new phrase (~phrase_builder) updates this controller when done.
+// underlying Logic: check  ~stanza.num_of_phrases and compare if the size of the
+// loaded-phrases-list ('~stanza.phrases') is the same. If yes, then start playback.
+// every new phrase (~phrase_builder controller) updates this controller when done.
 ~stanza_ready_to_play.remove;
 ~stanza_ready_to_play = SimpleController(~stanza.phrases).put(
 	\update, {|values, tag, args|
@@ -67,7 +67,7 @@
 	syll_length: Ref([]),
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
-	num_words: {|self| var num = self.syll_length.value.reject{|x| x=='Rest(0)'}; num.size },//reject punctuation
+	num_words: {|self| var num = self.syll_length.value.reject{|x| x=='Rest(0)'}; num.size },//reject punctuation & calculate num words
 	punctuation: Ref([]),
 	adjectives: Ref([]),
 	nouns: Ref([]),
@@ -218,7 +218,7 @@
 // punctuation controller
 // different punctuations are transformed into \dur stretch values
 // it creates (a) one Pdefn that controlls a Pstretch
-// and (b) one Pdefn that sets the \amp to 0 whenever there is a punctuation, thus creating a Rest.
+// and (b) one Pdefn that sets the \amp to 0 whenever there is a punctuation, thus creating a rest.
 ~punct_ctrl.remove;
 ~punct_ctrl = SimpleController(~phrase.punctuation).put(
 	\value,{ |values, tag, args|
@@ -379,7 +379,7 @@
 				)*/
 				Pbindef(
 					(\player_++id).asSymbol,
-					\instrument, \trig_buf,
+					\instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
 					\bufnum, Pfunc{|ev| ev.buf.normalize.bufnum},
 					\server, server,
 					\group, group,
@@ -388,7 +388,7 @@
 					// \degree, Pshuf([1,3,5,2,6],2)*2,
 					\degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
 					\octave, Pgate(Pfunc{[4,5,6,7].choose}),
-					\amp, 0.5 * Pdefn((\punct_rest++id).asSymbol),
+					\amp, (0.25 * Pdefn((\punct_rest++id).asSymbol))*0.5,
 					\pan, Pwhite(-1,1),
 					\scale, Pfunc{topEnvironment[\stanza].scale},
 					\out, fx_bus.index
