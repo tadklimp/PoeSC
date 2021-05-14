@@ -1,4 +1,5 @@
 
+~stanza.scale
 ~stanza.phrases.().size
 (
 ~stanza = (
@@ -6,7 +7,7 @@
 	mode: Ref('seq'),
 	num_of_phrases: Ref(0),
 	scale: Ref( Scale.major ),
-	steps_octave: {|self| self.scale.value.pitchesPerOctave },
+	scale_size: {|self| self.scale.value.size },
 	phrases: Ref(List.new)
 );
 
@@ -203,9 +204,9 @@
 				if(i != 'Rest(0)') { i.asString.do{ |x|
 					// x.class.postln;
 					case
-					{x == $P}{ new_list.add(0)} // Primary stress
-					{x == $S}{ new_list.add(0)} // Secondary stress
-					{x == $U}{ new_list.add(0)} // Unstressed
+					{x == $P}{ new_list.add(2)} // Primary stress
+					{x == $S}{ new_list.add(1)} // Secondary stress
+					{x == $U}{ new_list.add(1)} // Unstressed
 				}
 				}{
 					// new_list.add(Rest(0))
@@ -246,6 +247,26 @@
 );
 
 
+// select one scale out of the 108 scales included in SuperCollider.
+// this applies to a whole Stanza, so all included phrases will follow the same scale.
+// the scale is selected by summing all syllable scores included in a phrase.
+// if sum > Scale.names.size then it wraps back to zero using a modulo operation.
+~choose_scale.remove;
+~choose_scale = SimpleController(~stanza.scale).put(
+	\value, {|values, tag, args|
+		var score_list = values.value;
+		var new_list = List.new;
+		var sum, scale_index, selected_scale;
+
+		sum = values.value[0];
+		scale_index = sum % Scale.names.size; // modulo 108 included scales
+		selected_scale = Scale.names[scale_index];
+		~stanza.scale.value_(Scale.at(selected_scale));
+		("Selected Scale is " ++ selected_scale).postln;
+
+	}
+);
+
 ~syll_score_ctrl.remove;
 ~syll_score_ctrl = SimpleController(~phrase.syll_score).put(
 	\value,{ |values, tag, args|
@@ -256,7 +277,7 @@
 
 		values.value.do{ |i|
 			if (i != 'Rest(0)')
-			{ new_list.add( i % ~stanza.steps_octave) }
+			{ new_list.add( i % ~stanza.scale_size) }
 			{ new_list.add( Rest(0)) }
 		};
 		~phrase.pitch_collection.value_(new_list);
@@ -402,7 +423,7 @@
 				)*/
 				Pbindef(
 					(\player_++id).asSymbol,
-					\instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
+					// \instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
 					\bufnum, Pfunc{|ev| ev.buf.normalize.bufnum},
 					\server, server,
 					\group, group,
@@ -410,7 +431,7 @@
 					\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
 					// \degree, Pshuf([1,3,5,2,6],2)*2,
 					// \degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
-					\degree, Pdefn((\pitch_collection_++id).asSymbol).trace,
+					\degree, Pdefn((\pitch_collection_++id).asSymbol)*Pdefn((\syllab_stress_++id).asSymbol),
 					// \detune, Pdefn((\syllab_stress_++id).asSymbol),
 					// \octave, Pgate(Pfunc{[4,5,6,7].choose}),
 					\amp, (0.25 * Pdefn((\punct_rest++id).asSymbol))*0.5,

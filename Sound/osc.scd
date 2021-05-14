@@ -36,6 +36,25 @@ OSCdef.new(
 ).fix;
 
 
+// receives total stanza score, defined as the sum of each letter's value.
+// controls the selected scale
+OSCdef.new(
+	'/stanza/score',
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+		var new_list = List.new;
+
+		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
+		~stanza.scale.value_(values[1..]).changed(\value);
+		("total score is "++values[1..]).postln;
+
+	},
+	'/stanza/score',
+	nil,
+).fix;
+
+
 // receives amount of syllables in each word
 // that could effect fx parameters
 // e.g. every syll_length change x
@@ -77,24 +96,6 @@ OSCdef.new(
 		~phrase.syll_weight.value_(values[1..]).changed(\value);
 	},
 	'/syllab/weight',
-	nil,
-).fix;
-
-// receives syllable's score, defined as the sum of each letter's value.
-// defines the final pitch of this syllable, modulo ~phrase.steps_per_octave
-OSCdef.new(
-	'/syllab/score',
-	{
-		|msg, time, recAddr, recPort|
-		var values = msg;
-		var new_list = List.new;
-
-		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
-		~phrase.syll_score.value_(values[1..]).changed(\value);
-		("score is "++values[1..]).postln;
-
-	},
-	'/syllab/score',
 	nil,
 ).fix;
 
@@ -146,6 +147,24 @@ OSCdef.new(
 	nil,
 ).fix;
 
+
+// receives syllable's score, defined as the sum of each letter's value.
+// defines the final pitch of this syllable, modulo ~stanza.scale_size
+OSCdef.new(
+	'/syllab/score',
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+		var new_list = List.new;
+
+		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
+		~phrase.syll_score.value_(values[1..]).changed(\value);
+		("score is "++values[1..]).postln;
+
+	},
+	'/syllab/score',
+	nil,
+).fix;
 
 
 // receives each line's adjectives

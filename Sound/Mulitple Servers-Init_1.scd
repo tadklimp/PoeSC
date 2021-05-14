@@ -174,7 +174,6 @@ h = Server.new(\serverC, NetAddr.new("localhost", 57113), options: o);
 		local2 = AllpassN.ar(local2,0.2,pitch*2,0.005);
 		// local2 = Compander.ar(local2,local1,0.65,0.65,0.5,mul:0.3).tanh.lag(0.0005).softclip;
 
-
 		local = LeakDC.ar(local1+local2);
 		local = Compander.ar(local,local,0.85,0.95,0.5,mul:0.85).tan;
 		//send it back to LocalIn

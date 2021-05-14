@@ -24,7 +24,8 @@ def callback():
     txt.get_adjectives("// ")
     splits = txt.split_sentences()
     # trigger new Stanza and pass num of lines
-    Osc_send.new_stanza_trigger(len(splits[1]))
+    Osc_send.new_stanza_trigger( len(splits[1]) )
+    Osc_send.stanza_score( txt.stanza_score() )
     # check if playback mode is seq or par
     if splits[0] == "par":
         Osc_send.playback_mode("par")

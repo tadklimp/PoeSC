@@ -19,20 +19,20 @@ import numpy as np
 
 class Nlp:
     """ Initialize Spacy and keep it in Memory as a reference. 
-    This way the model doesn't have to be loaded repeatedly. 
-    Initialize Adjective Classifier. Probably this has to be moved in a separate Class. """
+    In that way, the model doesn't have to be loaded repeatedly which saves a lot of loading time. Initialize Adjective Classifier. Probably this has to be moved in a separate Class. """
     
     model = None
     adj_classifier = None
     adj_classes = train_sets.adj_classes
     adj_train_set = train_sets.adj_train_set
 
+
     def __init__(self, text):
         self.text = text
 
+
     def main():
         """ Load Spacy model and Classifiers. Keep them in memory """
-
         if Nlp.model is None:
             Nlp.model = spacy.load("en_core_web_lg")
             # special_case = [{ORTH: "\n"}]
@@ -54,6 +54,7 @@ class Nlp:
     # more info here: https://spacy.io/usage/processing-pipelines#factories-decorator-component
     @Language.factory('line_splitter')
     def new_line_splitter(nlp, name):
+        ''' defines a custom Spacy pipeline, splitting lines at \n '''
         def line_component(doc):
             for i, token in enumerate(doc[:-1]):
                 if token.text == "\n":
@@ -64,7 +65,7 @@ class Nlp:
 
     def split_sentences(self):
         """ Split incoming text into sentences.
-        Returns a list of [mode, sentences] 
+        Returns a list of [playback_mode, sentences] 
         """
         sentences = [str(sent).strip() for sent in self.model(self.text).sents]
         # set default playback mode to "seq"
@@ -79,6 +80,18 @@ class Nlp:
             del sentences[0]
         print([mode, sentences])
         return [mode,sentences]
+
+
+    def stanza_score(self):
+        ''' calculate the total letter-score for all stanza words.
+        this controls the selected Scale in supercollider '''
+        score = 0
+        for word in self.model(self.text):
+            if not word.is_punct:
+                if not word.text == "\n" :
+                    score = score + train_sets.calculate_score(word.text)
+                    print(word)
+        return score
 
 
     # depricated 
@@ -103,9 +116,6 @@ class Nlp:
         # print(collection)
         # print(self.model, self.text)
         return collection
-
-
-
 
 
 
