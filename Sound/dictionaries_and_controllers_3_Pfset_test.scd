@@ -90,7 +90,7 @@
 
 	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
 	recursion: Ref(true), // affects Pbindef players
-	repeats:Ref(1),
+	repeats:Ref(3),
 
 	all_srvrs: { Server.allRunningServers },
 	server: Ref(nil),
@@ -182,7 +182,7 @@
 	\value,{ |values, tag, args|
 		var new_list = List.new;
 		var id = ~phrase.id.value;
-		var repeats = ~phrase.repeats.value;
+		// var repeats = ~phrase.repeats.value;
 
 		values.value.do{ |i|
 			if (i.isKindOf(Integer)){
@@ -191,7 +191,7 @@
 				new_list.add(Rest(0))
 			}
 		};
-		Pdefn((\syllab_length_++id).asSymbol, Pn(Pseq(new_list.asArray, 1),repeats));
+		Pdefn((\syllab_length_++id).asSymbol, Pn(Pseq(new_list.asArray, 1), 1));
 		("lenghts are: "++ values).postln;
 
 	}
@@ -205,7 +205,7 @@
 	\value,{ |values, tag, args|
 		var new_list = List.new;
 		var id = ~phrase.id.value;
-		var repeats = ~phrase.repeats.value;
+		// var repeats = ~phrase.repeats.value;
 		values.value.do{ |i|
 			if (i.isKindOf(Symbol)){
 				if(i != 'Rest(0)') { i.asString.do{ |x|
@@ -221,7 +221,7 @@
 				}
 			}
 		};
-		Pdefn((\syllab_stress_++id).asSymbol,Pn(Pseq(new_list.asArray, 1),repeats));
+		Pdefn((\syllab_stress_++id).asSymbol,Pn(Pseq(new_list.asArray, 1), 1));
 		("stresses are: "++ values).postln;
 	}
 );
@@ -233,7 +233,7 @@
 	\value,{ |values, tag, args|
 		var new_list = List.new;
 		var id = ~phrase.id.value;
-		var repeats = ~phrase.repeats.value;
+		// var repeats = ~phrase.repeats.value;
 
 		values.value.do{ |i|
 			if (i.isKindOf(Symbol)){
@@ -248,7 +248,7 @@
 				}
 			}
 		};
-		Pdefn((\syllab_weight_++id).asSymbol, Pn(Pseq(new_list.asArray, 1),repeats));
+		Pdefn((\syllab_weight_++id).asSymbol, Pn(Pseq(new_list.asArray, 1), 1));
 		("weights are: "++ values).postln;
 	}
 );
@@ -280,7 +280,7 @@
 	\value,{ |values, tag, args|
 		var new_list = List.new;
 		var id = ~phrase.id.value;
-		var repeats = ~phrase.repeats.value;
+		// var repeats = ~phrase.repeats.value;
 		var scale = ~stanza.scale.value;
 
 		values.value.do{ |i|
@@ -290,7 +290,7 @@
 		};
 		~phrase.pitch_collection.value_(new_list);
 
-		Pdefn((\pitch_collection_++id).asSymbol, Pn(Pseq(new_list.asArray, 1),repeats));
+		Pdefn((\pitch_collection_++id).asSymbol, Pn(Pseq(new_list.asArray, 1), 1));
 		("pitches are: "++ new_list).postln;
 	}
 );
@@ -306,7 +306,7 @@
 	\value,{ |values, tag, args|
 		var new_list = List.new;
 		var id = ~phrase.id.value;
-		var repeats = ~phrase.repeats.value;
+		// var repeats = ~phrase.repeats.value;
 		var amp_transform;
 		// transform punctuation to /dur multiplier
 		values.value.do{ |i|
@@ -330,9 +330,9 @@
 		// if any value is > 1 => set the amp to 0, i.e. Rest
 		amp_transform = new_list.asArray.collect{|x| if (x>1){x=0}{x=1}};
 		//create the stretch Pdefn
-		Pdefn((\punct_stretch++id).asSymbol, Pn(Pseq(new_list.asArray, 1), repeats));
+		Pdefn((\punct_stretch++id).asSymbol, Pn(Pseq(new_list.asArray, 1), 1));
 		// create the "rest" Pdefn
-		Pdefn((\punct_rest++id).asSymbol, Pn(Pseq(amp_transform, 1), repeats));
+		Pdefn((\punct_rest++id).asSymbol, Pn(Pseq(amp_transform, 1), 1));
 
 	}
 );
@@ -410,42 +410,45 @@
 			Pfset({
 				~buf=	Buffer.readChannel(server,"/Volumes/Archive1/Sample Libraries/SuperCollider Recordings/SC-2020_Dec/Ircam/ircam_beat-28(FFT-singleLow).wav" , channels:0);
 			},
-			Pstretch(
-				Pdefn((\punct_stretch++id).asSymbol),
-				/*					Pbindef(
-				// name
-				(\player_++id).asSymbol,
-				// PbindProxy
-				\server, server,
-				\group, group,
-				\addAction, 0, // place at head of group
-				\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
-				// \degree, Pshuf([1,3,5,2,6],2)*2,
-				\degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
-				\octave, Pgate(Pfunc{[4,5,6,7].choose}),
-				\amp, 0.05 * Pdefn((\punct_rest++id).asSymbol),
-				\pan, Pwhite(-1,1),
-				\scale, Pfunc{topEnvironment[\stanza].scale},
-				\out, fx_bus.index
-				)*/
-				Pbindef(
+			Pn(
+				Pstretch(
+					Pdefn((\punct_stretch++id).asSymbol),
+					/*					Pbindef(
+					// name
 					(\player_++id).asSymbol,
-					// \instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
-					\bufnum, Pfunc{|ev| ev.buf.normalize.bufnum},
+					// PbindProxy
 					\server, server,
 					\group, group,
 					\addAction, 0, // place at head of group
 					\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
 					// \degree, Pshuf([1,3,5,2,6],2)*2,
-					// \degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
-					\degree, Pdefn((\pitch_collection_++id).asSymbol)*Pdefn((\syllab_stress_++id).asSymbol),
-					// \detune, Pdefn((\syllab_stress_++id).asSymbol),
-					// \octave, Pgate(Pfunc{[4,5,6,7].choose}),
-					\amp, (0.25 * Pdefn((\punct_rest++id).asSymbol))*0.5,
+					\degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
+					\octave, Pgate(Pfunc{[4,5,6,7].choose}),
+					\amp, 0.05 * Pdefn((\punct_rest++id).asSymbol),
 					\pan, Pwhite(-1,1),
-					\scale, Pfunc{topEnvironment[\stanza].scale.value},
+					\scale, Pfunc{topEnvironment[\stanza].scale},
 					\out, fx_bus.index
-				)
+					)*/
+					Pbindef(
+						(\player_++id).asSymbol,
+						// \instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
+						\bufnum, Pfunc{|ev| ev.buf.normalize.bufnum},
+						\server, server,
+						\group, group,
+						\addAction, 0, // place at head of group
+						\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
+						// \degree, Pshuf([1,3,5,2,6],2)*2,
+						// \degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
+						\degree, Pdefn((\pitch_collection_++id).asSymbol)*Pdefn((\syllab_stress_++id).asSymbol),
+						// \detune, Pdefn((\syllab_stress_++id).asSymbol),
+						// \octave, Pgate(Pfunc{[4,5,6,7].choose}),
+						\amp, (0.25 * Pdefn((\punct_rest++id).asSymbol))*0.5,
+						\pan, Pwhite(-1,1),
+						\scale, Pfunc{topEnvironment[\stanza].scale.value},
+						\out, fx_bus.index
+					)
+				),
+				~phrase.repeats.value;
 			)
 			,		//cleanup function:
 			{ var time=3;
