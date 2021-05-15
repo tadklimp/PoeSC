@@ -6,21 +6,28 @@
 	id: Ref(0),
 	mode: Ref('seq'),
 	num_of_phrases: Ref(0),
+	phrases: Ref(List.new),
 	scale: Ref( Scale.major ),
 	scale_size: {|self| self.scale.value.size },
-	phrases: Ref(List.new)
+	tempo: Ref(1),
+	tempoClock: Ref(nil)
 );
 
+
+
+// ("~" ++ "tempoClock_" ++ ~stanza.id.value.asString ++ "=" ++ ~stanza.tempo.value.asString).interpret
 
 
 // initialize new Stanza
 // for every new Stanza-> reset its 'phrases' key and
 // reset Phrase's 'trig' key
+// creates new TempoClock
 ~stanza_init.remove;
 ~stanza_init = SimpleController(~stanza.id).put(
 	\init, {|values, tag, args|
 		~stanza.phrases.value_(List.new);
 		~phrase.trig.value_(0);
+		// 'tempoClock_'++~stanza.id.value.asSymbol
 	};
 );
 
@@ -48,8 +55,8 @@
 	\mode, {|values, tag, args|
 		var phrases = ~stanza.phrases.value.asArray;
 		case
-		{~stanza.mode.value == 'seq'} {Pseq( phrases ).play(quant:1)}
-		{~stanza.mode.value == 'par'} {Ppar( phrases ).play(quant:1)}
+		{~stanza.mode.value == 'seq'} {Pdef(\mainPlayer, Pseq( phrases )).play(quant:1)}
+		{~stanza.mode.value == 'par'} {Pdef(\mainPlayer, Ppar( phrases )).play(quant:1)}
 	}
 );
 
@@ -267,6 +274,7 @@
 	}
 );
 
+// create new pitch degree collection
 ~syll_score_ctrl.remove;
 ~syll_score_ctrl = SimpleController(~phrase.syll_score).put(
 	\value,{ |values, tag, args|
@@ -286,7 +294,6 @@
 		("pitches are: "++ new_list).postln;
 	}
 );
-
 
 
 

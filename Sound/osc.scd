@@ -37,7 +37,7 @@ OSCdef.new(
 
 
 // receives total stanza score, defined as the sum of each letter's value.
-// controls the selected scale
+// controls the selected scale: sum % (total num of scales = 108)
 OSCdef.new(
 	'/stanza/score',
 	{
