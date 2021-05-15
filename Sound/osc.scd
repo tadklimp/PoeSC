@@ -37,7 +37,8 @@ OSCdef.new(
 
 
 // receives total stanza score, defined as the sum of each letter's value.
-// controls the selected scale: sum % (total num of scales = 108)
+// controls (a) the selected scale: sum % (total num of scales = 108)
+// and (b) the Tempo: (sum / number of phrases)/60
 OSCdef.new(
 	'/stanza/score',
 	{
@@ -46,7 +47,7 @@ OSCdef.new(
 		var new_list = List.new;
 
 		// Pdefn(\syllab_weight, Pseq(new_list.asArray, inf));
-		~stanza.scale.value_(values[1..]).changed(\value);
+		~stanza.score.value_(values[1..]).changed(\value);
 		("total score is "++values[1..]).postln;
 
 	},

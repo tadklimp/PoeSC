@@ -1,12 +1,14 @@
 
-~stanza.scale
+~stanza.tempoClock.value.tempo
 ~stanza.phrases.().size
+~stanza.id
 (
 ~stanza = (
 	id: Ref(0),
 	mode: Ref('seq'),
 	num_of_phrases: Ref(0),
 	phrases: Ref(List.new),
+	score: Ref(0),
 	scale: Ref( Scale.major ),
 	scale_size: {|self| self.scale.value.size },
 	tempo: Ref(1),
@@ -54,13 +56,16 @@
 ~stanza_mode = SimpleController(~stanza.mode).put(
 	\mode, {|values, tag, args|
 		var phrases = ~stanza.phrases.value.asArray;
+		var clock = ~stanza.tempoClock.value;
 		case
-		{~stanza.mode.value == 'seq'} {Pdef(\mainPlayer, Pseq( phrases )).play(quant:1)}
-		{~stanza.mode.value == 'par'} {Pdef(\mainPlayer, Ppar( phrases )).play(quant:1)}
+		{~stanza.mode.value == 'seq'} {Pdef(\mainPlayer, Pseq( phrases )).play(clock, quant:1)}
+		{~stanza.mode.value == 'par'} {Pdef(\mainPlayer, Ppar( phrases )).play(clock, quant:1)};
 	}
 );
 
 );
+
+
 
 ~phrase.syll_length
 ~phrase.num_words
@@ -253,26 +258,45 @@
 	}
 );
 
-
+// total word score of whole Stanza
+// this controller chooses Scale and Tempo for the whole stanza.
 // select one scale out of the 108 scales included in SuperCollider.
-// this applies to a whole Stanza, so all included phrases will follow the same scale.
-// the scale is selected by summing all syllable scores included in a phrase.
+// all included phrases will follow the same scale.
 // if sum > Scale.names.size then it wraps back to zero using a modulo operation.
-~choose_scale.remove;
-~choose_scale = SimpleController(~stanza.scale).put(
+~stanza_score_change.remove;
+~stanza_score_change = SimpleController(~stanza.score).put(
 	\value, {|values, tag, args|
-		var score_list = values.value;
+		var id = ~stanza.id.value;
 		var new_list = List.new;
-		var sum, scale_index, selected_scale;
-
+		var sum, scale_index, selected_scale, tempo, clock;
+		var numPhrases = ~stanza.num_of_phrases.value;
 		sum = values.value[0];
+
+		// select Scale
 		scale_index = sum % Scale.names.size; // modulo 108 included scales
 		selected_scale = Scale.names[scale_index];
 		~stanza.scale.value_(Scale.at(selected_scale));
 		("Selected Scale is " ++ selected_scale).postln;
 
+		// select Tempo BPM by dividing total score over number of phrases over 60;
+		if (sum.notNil and:(sum != 0)) {
+			tempo = ~stanza.tempo.value_( (sum/numPhrases) / 60);
+			("Tempo is: %").format(~stanza.tempo.value * 60).postln;
+			// create a new TempoClock
+			~stanza.tempoClock.value_( ("TempoClock.new(" ++ ~stanza.tempo.value.asString ++ ")").interpret );
+		}{
+			tempo = ~stanza.tempo.value_(1);
+			"Initial Tempo".postln;
+		}
 	}
 );
+
+// ~tempoClock_2.tempo
+// ~stanza.id.value;
+// ~stanza.tempo.value;
+// ~stanza.tempoClock.value.tempo;
+// ~stanza.tempoClock.value.isRunning;
+// ~stanza.tempoClock.value.stop;
 
 // create new pitch degree collection
 ~syll_score_ctrl.remove;
@@ -400,7 +424,7 @@
 		var group = args[1];
 		var server = args[2];
 		var fx_bus = args[3];
-		var tempo_grid = ~phrase.tempo_grid.value;
+		var tempo_grid = ~phrase.tempo_grid.value.reciprocal;
 
 		// add phrase to the Stanza's 'phrases' list
 		// surround everything in a Pstretch so that punctuation can "stretch" silences accordingly
@@ -430,12 +454,12 @@
 				)*/
 				Pbindef(
 					(\player_++id).asSymbol,
-					// \instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
+					\instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
 					\bufnum, Pfunc{|ev| ev.buf.normalize.bufnum},
 					\server, server,
 					\group, group,
 					\addAction, 0, // place at head of group
-					\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
+					\dur, tempo_grid * Pdefn((\syllab_weight_++id).asSymbol),
 					// \degree, Pshuf([1,3,5,2,6],2)*2,
 					// \degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
 					\degree, Pdefn((\pitch_collection_++id).asSymbol)*Pdefn((\syllab_stress_++id).asSymbol),
@@ -463,6 +487,8 @@
 					Pdefn.all.keys.do{ |key,i|
 						if (key.asString.contains(id.asString)) { Pdefn(key).remove}
 					};
+					// free the stanza TempoClock
+					topEnvironment[\stanza].tempoClock.value.stop;
 				}
 			}
 			)
@@ -477,7 +503,9 @@
 
 
 
-
+~stanza.tempoClock.value.isRunning
+TempoClock.all
+TempoClock.all.do{|x| x.stop}
 ~phrase.tempo_grid.value_(4)
 
 ~stanza.phrases.value.asArray
