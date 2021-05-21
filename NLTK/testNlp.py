@@ -13,7 +13,7 @@ Osc_send.main()
 
 # create new tkinter Window
 window = tk.Tk()
-e = tk.Text(window, bg="black", fg="white", undo="true")
+e = tk.Text(window, bg="black", fg="white", undo="true", insertbackground="white")
 e.pack()
 e.focus_set()
 
@@ -21,11 +21,12 @@ e.focus_set()
 # main Routine
 def callback():
     txt = Nlp(e.get("1.0", tk.END))
-    txt.get_adjectives("// ")
+    # txt.get_adjectives("// ")
     splits = txt.split_sentences()
     # trigger new Stanza and pass num of lines
     Osc_send.new_stanza_trigger( len(splits[1]) )
     Osc_send.stanza_score( txt.stanza_score() )
+    sleep(0.2) 
     # check if playback mode is seq or par
     if splits[0] == "par":
         Osc_send.playback_mode("par")

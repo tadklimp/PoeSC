@@ -84,13 +84,12 @@ class Nlp:
 
     def stanza_score(self):
         ''' calculate the total letter-score for all stanza words.
-        this controls the selected Scale in supercollider '''
+        this effects the selected Scale in supercollider, as well as the Tempo '''
         score = 0
         for word in self.model(self.text):
             if not word.is_punct:
                 if not word.text == "\n" :
                     score = score + train_sets.calculate_score(word.text)
-                    print(word)
         return score
 
 
