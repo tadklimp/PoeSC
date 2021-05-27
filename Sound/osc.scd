@@ -22,23 +22,9 @@ OSCdef.new(
 	nil, // nil means to listen to all incoming IPs/ports
 ).fix;
 
-// Check Stanza's playback mode (Serial or Parallel)
-OSCdef.new(
-	'/stanza/mode',
-	{
-		|msg, time, recAddr, recPort|
-		case
-		{msg[1] == 'seq'} { ~stanza.mode.value_('seq') }
-		{msg[1] == 'par'} { ~stanza.mode.value_('par') };
-	},
-	'/stanza/mode',
-	nil,
-).fix;
-
-
 // receives total stanza score, defined as the sum of each letter's value.
 // controls (a) the selected scale: sum % (total num of scales = 108)
-// and (b) the Tempo: (sum / number of phrases)/60
+// and (b) the Tempo: (sum / number of phrases)/120
 OSCdef.new(
 	'/stanza/score',
 	{
@@ -54,6 +40,22 @@ OSCdef.new(
 	'/stanza/score',
 	nil,
 ).fix;
+
+
+// Check Stanza's playback mode (Serial or Parallel)
+OSCdef.new(
+	'/stanza/mode',
+	{
+		|msg, time, recAddr, recPort|
+		case
+		{msg[1] == 'seq'} { ~stanza.mode.value_('seq') }
+		{msg[1] == 'par'} { ~stanza.mode.value_('par') };
+	},
+	'/stanza/mode',
+	nil,
+).fix;
+
+
 
 
 // receives amount of syllables in each word
