@@ -1,10 +1,3 @@
-NetAddr.langPort; // Generally port 57120 but could be used by another application so check
-thisProcess.openPorts; // See all open ports for sclang.  These are UDP ports
-
-// Trace incoming messages
-OSCFunc.trace(true,true);
-OSCFunc.trace(false);
-~counter
 (
 // reset
 OSCdef.freeAll;
