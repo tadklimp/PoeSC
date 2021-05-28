@@ -2,13 +2,13 @@
 - ( Summary of the Project )
 
 During the 6 months of my research I developed a software interface for live-coding music which I currently call PoeSC.
-Plain text (in english) is used as the coding grammar;  it is analyzed metrically, syntactically and arbitrarily and the data out of this analysis control musical and sonic parameters. 
-The goal of this project is to investigate the possibility of creating musical structures/gestures of varied rhythmical character while typing text in "natural language".
-In other words: to create textual/metrical structures that they are somehow reflected in sound.
-My main speculation here was that it is more impulsive to write plain text while performing, than to use a typical programming language.
+Plain text (in english) is used as the coding grammar.  
+It is analyzed metrically, syntactically and arbitrarily with the data of this analysis controlling musical and sonic parameters. 
+My main impulse was the need to create textual/metrical structures that they are somehow reflected in sound.
+My main speculation here was that it is more intuitive to write plain text while performing, than to use a typical programming language.
 For the implementation, 2 programming languages are used, Python and Supercollider; they communicate through the OSC protocol. 
-The first language is analyzing the text (metrically & grammatically) and transmits the data to the latter which transforms it into sound.
-Currently, the project has its core constructed and undergoes further development.
+The first language is analyzing the text (metrically & grammatically) and transmits the data to the latter which maps it onto sound.
+Currently, the project has its core constructed and undergoes further development. A detailed analyis of the project, as well as its source code can be found here: https://github.com/tadklimp/PoeSC
 
 
 ## Gab es Änderungen gegenüber dem Antrag? (1.000 Zeichen)  
@@ -60,4 +60,4 @@ The scholarship gave me time to methodically reflect on my compositional and res
 ## Gab es schon Aufführungen? (1.000 Zeichen)
 - ( Have there been performances yet? ) 
 
-Due to the current pandemic restrictions, a live performance has not been yet been possible, but I hope it will soon be. Nevertheless, the software as of date and all the source-code material is available online for anyone to freely access through LINK. I support the open-source sharing of code, software and research in general, as this I believe is fundamental to our nourishment and formation as community; it has already had a huge impact on my education and artistic development and I consider myself part of this millieu. The project is still under development and will continue to be for the following months as more and more elements are refined. That repository will continue to be updated. 
+Due to the current pandemic restrictions, a live performance has not been yet been possible, but I hope it will soon be. Nevertheless, the software as of date and all the source-code material is available online for anyone to freely access through LINK. I support the open-source sharing of code, software and research in general, as this I believe is fundamental to our nourishment and formation as community; it has already had a huge impact on my education and artistic development and I consider myself part of this millieu/discourse. The project is still under development and will continue to be for the following months as more and more elements are refined. That repository will continue to be updated. 
