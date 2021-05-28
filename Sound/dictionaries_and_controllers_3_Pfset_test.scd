@@ -474,7 +474,7 @@
 				)*/
 				Pbindef(
 					(\player_++id).asSymbol,
-					\instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
+					// \instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
 					\bufnum, Pfunc{|ev| ev.buf.normalize.bufnum},
 					\server, server,
 					\group, group,
