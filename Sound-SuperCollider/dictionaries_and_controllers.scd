@@ -1,5 +1,6 @@
 
 ~stanza.tempoClock.value.tempo
+~stanza.tempo.()*60
 ~stanza.phrases.().size
 ~stanza.id
 (
