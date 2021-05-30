@@ -108,3 +108,5 @@ The interface is functional with the following steps already established:
 Author: Thomas Chousos / Tadklimp  
 This is a documentation repository of my personal compositional process.  
 Please feel free to fork and analyze and I hope you'll find inspiration.  
+
+The development of this project was possible through the support of the [Musikfonds "Neustart Kultur" Stipendienprogramm 2020/2021](https://www.musikfonds.de/wp-content/uploads/2020/07/MF-Stipendienprogramm_Ausschreibung_200713.pdf) scholarship.

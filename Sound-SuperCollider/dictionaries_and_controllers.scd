@@ -127,8 +127,6 @@
 	pitch_collection: Ref([]),
 	pitch_root: Ref(0),
 
-
-
 	all_srvrs: { Server.allRunningServers },
 	server: Ref(nil),
 	group_main: Ref(nil),
@@ -494,42 +492,4 @@
 );
 
 );
-
-1
-
-topEnvironment[\stanza].tempoClock.value.tempo*60
-~stanza.tempoClock.value.tempo*60
-~stanza.tempoClock.value.isRunning
-TempoClock.all
-TempoClock.all.do{|x| x.stop}
-~phrase.tempo_grid.value_(4)
-
-~stanza.phrases.value.asArray
-Pseq(~stanza.phrases.value.asArray).play(quant:1)
-~stanza.phrases.value
-~stanza.id.value
-~stanza.mode.value
-
-
-~phrase.id.value_(~phrase.id.value+1).changed(\init);
-~phrase.id.value_(~phrase.id.value+1).changed(\init);
-~phrase.id.value_(~phrase.id.value+1).changed(\init);
-~phrase.id.value
-Pdef.clear;
-Pdefn.clear;
-Pdef.gui;
-Pdefn.all.keys;
-
-Pdefn(\syllab_stress_17_1).asCode
-
-Pdefn.all.keys.do{ |key,i| if (key.asString.contains("7_2")) { Pdefn(key).remove}};
-Pdefn.all.keys.do{ |key,i| Pdefn(key).clock = };
-
-Pdef.modulateAll(\mtranspose, Pstep(Pseq([5,2,-2],inf),8), \scale, Scale.major.tuning_(Tuning.werckmeister))
-Pdef.modulateAll(\mtranspose, 0, \scale, Scale.major.tuning_(Tuning.werckmeister))
-Pdef.modulateAll(\detune, PXLine(1,200,20))
-Pdef.modulateAll(\detune, PXLine(200,1,80))
-Pdef.modulateAll(\detune, PLFTri(4,0,200,0))
-Pdef.modulateAll(\detune, 0)
-Pdef.modulateAll(\amp, 0.001)
 
