@@ -41,17 +41,15 @@ Each new block of text entered by the user creates a __Stanza__ player in Superc
 
 ## The synthesis engine in SuperCollider
 
-As soon as the OSC messages are received in SuperCollider they are mapped to numerous parameters.  
-
-
+As soon as the OSC messages are received in SuperCollider they are mapped to numerous parameters.
 <!-- ![Mapping Flowchart - Click for detailed view](assets/PoeSC_Dictionaries.png) -->
 <figure>
   <img
   src="assets/PoeSC_Dictionaries.png"
   alt="Mapping flowchart">
-  <figcaption>Detailed flowchart - Click for larger view  </figcaption>
+  <figcaption>Detailed flowchart - Click for larger view </figcaption>
 </figure>  
-
+<br></br>
 
 4 Servers are used in SuperCollider and whenever a new Phrase is initialized a Server is chosen according to its idleness. This is done in order to avoid audio dropouts from server overloading. In addition, each Phrase is initialized within a new Group and with its own FX. As soon as the Phrase is done playing, Group, FX and Pattern proxies are cleaned from memory. 
 
