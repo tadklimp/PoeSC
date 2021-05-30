@@ -106,5 +106,6 @@ The interface is functional with the following steps already established:
 
 # Disclaimer
 
+Author: Thomas Chousos / Tadklimp
 This is a documentation repository of my personal compositional process.  
 Please feel free to fork and analyze and I hope you'll find inspiration.  
