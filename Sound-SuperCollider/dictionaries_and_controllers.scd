@@ -1,8 +1,5 @@
 
-~stanza.tempoClock.value.tempo
-~stanza.tempo.()*60
-~stanza.phrases.().size
-~stanza.id
+
 (
 ~stanza = (
 	id: Ref(0),
@@ -111,19 +108,12 @@
 
 
 
-~phrase.syll_length
-~phrase.num_words
-~phrase.steps_octave
-~phrase.scale.value.degrees
-~phrase.scale.value[32]
-~phrase.num_words
-
 (
 ~phrase= (
 	trig: Ref(0),
 	id: Ref('symbol'),
 	tempo_grid: Ref(4),
-
+	repeats:Ref(1),
 	syll_length: Ref([]),
 	syll_stress: Ref([]),
 	syll_weight: Ref([]),
@@ -137,9 +127,7 @@
 	pitch_collection: Ref([]),
 	pitch_root: Ref(0),
 
-	stack: Ref(true), // affects Pdefns // wait until the end of phrase or not
-	recursion: Ref(true), // affects Pbindef players
-	repeats:Ref(1),
+
 
 	all_srvrs: { Server.allRunningServers },
 	server: Ref(nil),
@@ -455,24 +443,8 @@
 				~buf=	Buffer.readChannel(server,"/Volumes/Archive1/Sample Libraries/SuperCollider Recordings/SC-2020_Dec/Ircam/ircam_beat-28(FFT-singleLow).wav" , channels:0);
 			},
 			Pstretch(
-				// Pdefn((\punct_stretch_++id).asSymbol),
-				1,
-				/*					Pbindef(
-				// name
-				(\player_++id).asSymbol,
-				// PbindProxy
-				\server, server,
-				\group, group,
-				\addAction, 0, // place at head of group
-				\dur, tempo_grid.reciprocal* Pdefn((\syllab_weight_++id).asSymbol),
-				// \degree, Pshuf([1,3,5,2,6],2)*2,
-				\degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
-				\octave, Pgate(Pfunc{[4,5,6,7].choose}),
-				\amp, 0.05 * Pdefn((\punct_rest_++id).asSymbol),
-				\pan, Pwhite(-1,1),
-				\scale, Pfunc{topEnvironment[\stanza].scale},
-				\out, fx_bus.index
-				)*/
+				Pdefn((\punct_stretch_++id).asSymbol),
+
 				Pbindef(
 					(\player_++id).asSymbol,
 					// \instrument, Pstutter(4,Pshuf([\trig_buf,\pulse_noizy,\wire,\sine_arp,\ringz_space,\bufRd, \for_ur_joy,\feed_flageolet,\feed_low,\drone1,\minor1,\siren],inf)),
@@ -480,8 +452,8 @@
 					\server, server,
 					\group, group,
 					\addAction, 0, // place at head of group
-					// \dur, tempo_grid * Pdefn((\syllab_weight_++id).asSymbol),
-					\dur, tempo_grid ,
+					\dur, tempo_grid * Pdefn((\syllab_weight_++id).asSymbol),
+					// \dur, tempo_grid ,
 					// \degree, Pshuf([1,3,5,2,6],2)*2,
 					// \degree, Pshuf([1,3,5,2,6],inf)*Pdefn((\syllab_stress_++id).asSymbol),
 					\degree, Pdefn((\pitch_collection_++id).asSymbol)*Pdefn((\syllab_stress_++id).asSymbol),

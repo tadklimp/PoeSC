@@ -130,20 +130,6 @@ OSCdef.new(
 
 
 
-// receives each line's punctuation
-OSCdef.new(
-	'/phrase/punct',
-	{
-		|msg, time, recAddr, recPort|
-		var values = msg;
-			~phrase.punctuation.value_(values[1..]).changed(\value);
-
-	},
-	'/phrase/punct',
-	nil,
-).fix;
-
-
 // receives syllable's score, defined as the sum of each letter's value.
 // defines the final pitch of this syllable, modulo ~stanza.scale_size
 OSCdef.new(
@@ -159,6 +145,20 @@ OSCdef.new(
 
 	},
 	'/syllab/score',
+	nil,
+).fix;
+
+
+// receives each line's punctuation
+OSCdef.new(
+	'/phrase/punct',
+	{
+		|msg, time, recAddr, recPort|
+		var values = msg;
+			~phrase.punctuation.value_(values[1..]).changed(\value);
+
+	},
+	'/phrase/punct',
 	nil,
 ).fix;
 
